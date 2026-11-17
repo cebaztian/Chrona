@@ -4,13 +4,11 @@ Maintained by the `milestone-loop` skill (`.claude/skills/milestone-loop/SKILL.m
 resumes from this file. Answer the "Waiting for you" items here or in the session.
 
 ## Now
-- Milestone: M1c — Reliability matrix, done and approved unattended (committed locally). Next: M2 —
-  Alarm management UI, which is gated on D2 (the visual direction, owned by the interactive session)
-- The emulator is running (cold-booted by the loop with `emulator -avd Chrona_API37 -no-snapshot`)
-- M1b is done, approved unattended, committed locally as `0a3ca70`
-- M1a approved by the user (ADR-012 accepted with the backup alarm; ADR-014 stays *Proposed* until DV)
-- Emulator `Chrona_API37` is running (started by the user, 6 GB data partition), PIN `1234` set
-- Last update: 2026-11-17 12:58
+- **Loop stopped:** M0, M1a, M1b and M1c are done and committed locally (not pushed). The next milestone,
+  M2 — Alarm management UI, is gated on D2 (visual direction, owned by the interactive session). M3
+  and M4 follow M2. Nothing else is left for the agent.
+- The emulator `Chrona_API37` is running (cold-booted by the loop with `-no-snapshot`), PIN `1234`
+- Last update: 2026-11-17 16:25
 
 ## Milestones
 | Milestone | State | Checkpoint | Commit |
@@ -20,7 +18,7 @@ resumes from this file. Answer the "Waiting for you" items here or in the sessio
 | D2 | in-progress: task 1 (variants) owned by the interactive session, so the loop must skip D2 | | |
 | M1a | done | approved by the user 2026-11-17 | `2b1b521` "add ringing path skeleton" (local, not pushed) |
 | M1b | done | approved (unattended), 2026-11-17 | `0a3ca70` "add alarm store, scheduler and reconciliation" (local, not pushed) |
-| M1c | done | approved (unattended), 2026-11-17 | "verify engine reliability" (local, not pushed; hash in `git log`) |
+| M1c | done | approved (unattended), 2026-11-17 | `ed0ff0b` "verify engine reliability" (local, not pushed) |
 | M2 | todo (gated on D2) | | |
 | M3 | todo | | |
 | M4 | todo | | |
@@ -41,10 +39,14 @@ D1 tasks (done earlier): Stitch project and design system, the 11 screens, expor
 ## Waiting for you
 - _(M1a decisions answered 2026-11-17: ADR-012 accepted as `START_STICKY` plus the 60 s backup alarm;
   ADR-014 stays *Proposed*; checkpoint approved. See the journal.)_
+- [ ] **Blocker: M2 waits for D2.** The loop cannot pick the visual direction. D2/2 (the hybrid applied
+  to the 11 screens in `docs/design/final/`, interactive session) must be finished and approved before
+  M2 starts; M3 and M4 follow M2. When D2 is approved, mark it `done` in the table and re-run
+  `/loop /milestone-loop`.
 - [ ] **DV items collected so far (S25 Ultra or a hand-installed APK; never simulated):** run the step
   spike (grant Physical activity on the debug screen, "Step spike: start", lock the screen, walk,
   `logcat -s ChronaStepSpike`); check restart after a Recents swipe and under One UI's killers; deep
-  Doze; `canUseFullScreenIntent()` on a fresh sideload.
+  Doze; `canUseFullScreenIntent()` on a fresh sideload; the One UI battery settings (PLAN §4).
 
 ## Checkpoints
 
@@ -493,6 +495,12 @@ No screen has a brown background, white text on orange, or more than one orange-
   Verified: `./gradlew check` → BUILD SUCCESSFUL (lint + `checkNoInternetPermission`); `./gradlew test`
   → 60 tests, 0 failures. Emulator settings restored (time zone, DND, clock, screen timeout); the alarm
   stream volume ended at 7 instead of 6.
+- 2026-11-17 16:25 COMMIT M1c — `ed0ff0b` "verify engine reliability" (7 paths, local only). Left
+  unstaged (not mine or the loop's own definition): `docs/ADR.md` (ADR-024/025 and status lines),
+  `docs/DESIGN.md`, `docs/MILESTONES.md`, `docs/design/variants/`, `.claude/skills/milestone-loop/SKILL.md`.
+  This line, the hash cell and the Now/Waiting edits ride with the next commit. APPROVED M1c (unattended).
+- 2026-11-17 16:25 STOP — M2 is gated on D2 (owned by the interactive session; the loop never picks
+  the visual direction). No agent task is left that does not depend on it.
 - 2026-11-17 DONE checkpoint D1 — approved by the user (screens fine; Stitch web canvas renders them partially). M1b's D1 gate is met.
 - 2026-11-17 START D2/1 — variants of alarm list and ringing screen, both vibe archetypes (interactive session)
 - 2026-11-17 FINDING D2/1 — Stitch timed out on 6 of 9 generation calls; saved variants/list-A1, list-A2 (Editorial) and ringing-B1 (Ethereal, rendered as desktop). list-B and ringing-A may exist only in the Stitch web UI. Waiting for the user to check the web UI and pick a direction.
