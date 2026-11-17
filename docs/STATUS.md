@@ -18,7 +18,7 @@ resumes from this file. Answer the "Waiting for you" items here or in the sessio
 | M1a | done | approved by the user 2026-11-17 | `2b1b521` "add ringing path skeleton" (local, not pushed) |
 | M1b | done | approved (unattended), 2026-11-17 | `0a3ca70` "add alarm store, scheduler and reconciliation" (local, not pushed) |
 | M1c | done | approved (unattended), 2026-11-17 | `ed0ff0b` "verify engine reliability" (local, not pushed) |
-| M2 | done | approved (unattended), 2026-11-17 | "add alarm list, editor, settings and health screen" (local, not pushed; hash in the journal) |
+| M2 | done | approved (unattended), 2026-11-17 | `3b60aa9` "add alarm list, editor, settings and health screen" (local, not pushed) |
 | M3 | todo | | |
 | M4 | todo | | |
 | DV | todo (your decision at the start: S25 over adb, or a hand-installed APK) | | |
@@ -663,6 +663,7 @@ No screen has a brown background, white text on orange, or more than one orange-
   `RingingService` ("already ringing, ignoring start") and keeps a past `nextTriggerAt`; to decide in M3.
 - 2026-11-17 20:50 DECIDED M2 checkpoint — approved (unattended): ADR changes for M2 none; the Espresso
   pin stays as recorded above; reboot persistence of UI-made alarms is covered by M1c row 3.
+- 2026-11-17 20:55 COMMIT M2 — `3b60aa9` "add alarm list, editor, settings and health screen" (local only).
 - 2026-11-17 DONE checkpoint D1 — approved by the user (screens fine; Stitch web canvas renders them partially). M1b's D1 gate is met.
 - 2026-11-17 START D2/1 — variants of alarm list and ringing screen, both vibe archetypes (interactive session)
 - 2026-11-17 FINDING D2/1 — Stitch timed out on 6 of 9 generation calls; saved variants/list-A1, list-A2 (Editorial) and ringing-B1 (Ethereal, rendered as desktop). list-B and ringing-A may exist only in the Stitch web UI. Waiting for the user to check the web UI and pick a direction.
