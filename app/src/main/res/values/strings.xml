@@ -1,9 +1,183 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Chrona</string>
+
     <string name="ringing_channel">Ringing alarm</string>
     <string name="ringing_title">Alarm</string>
     <string name="ringing_text">Alarm is ringing</string>
     <string name="ringing_stop">Stop</string>
     <string name="ringing_snooze">Snooze</string>
+
+    <string name="store_channel_name">Alarm data</string>
+    <string name="store_corrupt_title">Alarms were reset</string>
+    <string name="store_corrupt_text">The alarm data could not be read. The old file was kept as %1$s.</string>
+
+    <string name="missed_channel_name">Missed alarms</string>
+    <string name="missed_title">Missed alarm</string>
+
+    <string name="alarms_title">Alarms</string>
+    <string name="settings_cd">Settings</string>
+    <string name="add_alarm_cd">Add alarm</string>
+    <string name="next_alarm_eyebrow">Next alarm</string>
+    <string name="rings_in">Rings in %1$s</string>
+    <string name="duration_dh">%1$d d %2$d h</string>
+    <string name="duration_hm">%1$d h %2$d min</string>
+    <string name="duration_m">%1$d min</string>
+    <string name="duration_lt_minute">less than a minute</string>
+
+    <string name="repeat_once">Once</string>
+    <string name="repeat_every_day">Every day</string>
+    <string name="repeat_weekdays">Weekdays</string>
+    <string name="repeat_weekends">Weekends</string>
+    <string name="day_initial_1">M</string>
+    <string name="day_initial_2">T</string>
+    <string name="day_initial_3">W</string>
+    <string name="day_initial_4">T</string>
+    <string name="day_initial_5">F</string>
+    <string name="day_initial_6">S</string>
+    <string name="day_initial_7">S</string>
+
+    <string name="mission_math_summary">Math · %1$d problems</string>
+    <string name="mission_shake_summary">Shake · %1$d</string>
+    <string name="mission_steps_summary">Steps · %1$d</string>
+
+    <string name="locked_ringing">Ringing · Solve to stop</string>
+    <string name="locked_snoozed">Snoozed until %1$s · Solve to stop</string>
+
+    <string name="empty_eyebrow">All quiet</string>
+    <string name="empty_title">No alarms</string>
+    <string name="empty_subtitle">Create your first alarm</string>
+    <string name="empty_note">To turn it off you will have to complete a mission</string>
+
+    <string name="alarm_deleted">Alarm deleted</string>
+    <string name="undo">Undo</string>
+
+    <string name="back_cd">Back</string>
+    <string name="delete_cd">Delete alarm</string>
+    <string name="editor_title_new">New alarm</string>
+    <string name="editor_title_edit">Edit alarm</string>
+    <string name="editor_time_cd">Set the time</string>
+    <string name="editor_section_repeat">Repeat</string>
+    <string name="editor_section_label">Label</string>
+    <string name="editor_section_mission">Mission</string>
+    <string name="editor_section_sound">Sound</string>
+    <string name="editor_section_snooze">Snooze</string>
+    <string name="editor_label_hint">Optional label</string>
+    <string name="editor_label_count">%1$d / %2$d</string>
+    <string name="editor_save">Save alarm</string>
+    <string name="editor_cancel">Cancel</string>
+    <string name="editor_ok">OK</string>
+    <string name="editor_invalid">Check the highlighted values</string>
+    <string name="editor_locked">This alarm is ringing or snoozed. Solve it to stop it before editing.</string>
+
+    <string name="mission_eyebrow">Wake-up mission</string>
+    <string name="mission_none_title">None</string>
+    <string name="mission_none_hint">Stops with a button</string>
+    <string name="mission_math_title">Math</string>
+    <string name="mission_math_hint">Solve operations</string>
+    <string name="mission_shake_title">Shake</string>
+    <string name="mission_shake_hint">Shake the phone</string>
+    <string name="mission_steps_title">Steps</string>
+    <string name="mission_steps_hint">Walk a number of steps</string>
+    <string name="mission_steps_needs_permission">Needs the physical activity permission</string>
+    <string name="mission_steps_unavailable">This device has no step sensor</string>
+    <string name="mission_picker_title">Choose a mission</string>
+    <string name="mission_picker_subtitle">To stop the alarm you will have to complete it</string>
+    <string name="mission_active">Active</string>
+    <string name="mission_done">Done</string>
+    <string name="mission_difficulty">Difficulty</string>
+    <string name="difficulty_easy">Easy</string>
+    <string name="difficulty_medium">Medium</string>
+    <string name="difficulty_hard">Hard</string>
+    <string name="mission_problems">Problems</string>
+    <string name="mission_shakes">Shakes</string>
+    <string name="mission_sensitivity">Sensitivity</string>
+    <string name="sensitivity_low">Low</string>
+    <string name="sensitivity_medium">Medium</string>
+    <string name="sensitivity_high">High</string>
+    <string name="mission_steps_count">Steps</string>
+    <string name="decrease_cd">Decrease</string>
+    <string name="increase_cd">Increase</string>
+    <string name="close_cd">Close</string>
+
+    <string name="sound_tone">Tone</string>
+    <string name="sound_default">Default</string>
+    <string name="sound_custom">Custom sound</string>
+    <string name="sound_vibration">Vibration</string>
+    <string name="sound_volume">Maximum volume</string>
+    <string name="sound_ramp">Gradual rise</string>
+    <string name="sound_ramp_off">Off</string>
+    <string name="sound_ramp_seconds">%1$d s</string>
+    <string name="sound_pick_title">Choose a sound</string>
+    <string name="sound_pick_ringtones">Alarm tones</string>
+    <string name="sound_pick_file">Choose a file</string>
+    <string name="sound_pick_default">Use the default sound</string>
+    <string name="sound_muted_warning">The alarm volume is muted. The alarm will raise it when it rings.</string>
+
+    <string name="snooze_title">Snooze alarm</string>
+    <string name="snooze_summary">%1$d min · up to %2$d times</string>
+    <string name="snooze_off">Off</string>
+    <string name="snooze_minutes">Minutes</string>
+    <string name="snooze_max">Times</string>
+    <string name="settings_title">Settings</string>
+    <string name="settings_general">General</string>
+    <string name="settings_health">System status</string>
+    <string name="settings_all_good">All good</string>
+    <string name="settings_onboarding">Run onboarding again</string>
+    <string name="settings_version">Version</string>
+    <plurals name="health_issues">
+        <item quantity="one">%d warning</item>
+        <item quantity="other">%d warnings</item>
+    </plurals>
+
+    <string name="health_title">System status</string>
+    <string name="health_subtitle">So your alarms always ring</string>
+    <string name="health_ok">OK</string>
+    <string name="health_attention">Review</string>
+    <string name="health_blocking">Blocking</string>
+    <string name="health_section_permissions">Permissions</string>
+    <string name="health_section_device">Device</string>
+    <string name="health_exact_alarms">Exact alarms</string>
+    <string name="health_notifications">Notifications</string>
+    <string name="health_full_screen">Full screen</string>
+    <string name="health_activity">Physical activity</string>
+    <string name="health_activity_detail">Used by the steps mission</string>
+    <string name="health_battery">Battery optimization</string>
+    <string name="health_battery_ok">Unrestricted</string>
+    <string name="health_battery_bad">May delay your alarms</string>
+    <string name="health_volume">Alarm volume</string>
+    <string name="health_volume_value">%1$d %%</string>
+    <string name="health_volume_muted">Muted</string>
+    <string name="health_dnd">Do not disturb</string>
+    <string name="dnd_off">Off</string>
+    <string name="dnd_priority">Priority only: check that alarms are allowed</string>
+    <string name="dnd_alarms">Alarms only</string>
+    <string name="dnd_total">Total silence blocks alarms</string>
+    <string name="health_samsung">Samsung settings</string>
+    <string name="health_samsung_text">Set the battery to Unrestricted and keep Chrona out of Sleeping apps</string>
+    <string name="health_granted">Granted</string>
+    <string name="health_missing">Not granted</string>
+    <string name="health_configure">Configure</string>
+    <string name="health_open_settings">Open settings</string>
+    <string name="health_refresh_cd">Refresh</string>
+
+    <string name="onboarding_step">Step %1$d of %2$d</string>
+    <string name="onboarding_skip">Skip</string>
+    <string name="onboarding_continue">Continue</string>
+    <string name="onboarding_finish">Finish</string>
+    <string name="onboarding_grant">Grant permissions</string>
+    <string name="onboarding_not_now">Not now</string>
+    <string name="onboarding_welcome_bar">Welcome</string>
+    <string name="onboarding_welcome_title">Wake up, for real</string>
+    <string name="onboarding_welcome_body">Chrona is an alarm clock with no ads, no accounts and no internet. To turn an alarm off you complete a mission.</string>
+    <string name="onboarding_permissions_bar">Permissions</string>
+    <string name="onboarding_permissions_title">Let Chrona wake you up</string>
+    <string name="onboarding_permissions_body">To ring on time, even with the phone locked, Chrona needs to show notifications and open full screen.</string>
+    <string name="onboarding_ready_bar">Ready</string>
+    <string name="onboarding_ready_title">All set</string>
+    <string name="onboarding_ready_body">One last thing: let Chrona run without battery limits so your alarms are never delayed.</string>
+
+    <string name="problem_hour">The hour must be between 0 and 23</string>
+    <string name="problem_minute">The minute must be between 0 and 59</string>
+    <string name="problem_label">The label is too long</string>
 </resources>

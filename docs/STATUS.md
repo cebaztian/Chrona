@@ -4,22 +4,21 @@ Maintained by the `milestone-loop` skill (`.claude/skills/milestone-loop/SKILL.m
 resumes from this file. Answer the "Waiting for you" items here or in the session.
 
 ## Now
-- **Loop stopped:** M0, D1, D2, M1a, M1b and M1c are done and committed locally (not pushed). D2 was
-  approved on 2026-11-17, so M2 — Alarm management UI is next: re-run `/loop /milestone-loop`. The
-  reference screens are `docs/design/final/01`–`11`; DESIGN.md is the spec.
-- The emulator `Chrona_API37` is running (cold-booted by the loop with `-no-snapshot`), PIN `1234`
-- Last update: 2026-11-17 16:25
+- **M2 done, checkpoint approved (unattended) 2026-11-17.** Next: M3 — Ringing screen and missions. Local
+  commits only: `origin/main` is at `946ef02`; `aaedeff` (D2) and the M2 commit are not on GitHub.
+- The emulator `Chrona_API37` is running with the debug build and four sample alarms, PIN `1234`.
+- Last update: 2026-11-17 18:30
 
 ## Milestones
 | Milestone | State | Checkpoint | Commit |
 |---|---|---|---|
 | M0 | done | auto-passed (unattended), 2026-11-17 | `1455276` "scaffold Chrona project" (local, not pushed) |
 | D1 | done | approved by the user 2026-11-17 | included in the M0 commit (no git existed before) |
-| D2 | done | approved by the user 2026-11-17 | "add screen designs" (local, not pushed) |
+| D2 | done | approved by the user 2026-11-17 | `aaedeff` "add screen designs" (local, not pushed) |
 | M1a | done | approved by the user 2026-11-17 | `2b1b521` "add ringing path skeleton" (local, not pushed) |
 | M1b | done | approved (unattended), 2026-11-17 | `0a3ca70` "add alarm store, scheduler and reconciliation" (local, not pushed) |
 | M1c | done | approved (unattended), 2026-11-17 | `ed0ff0b` "verify engine reliability" (local, not pushed) |
-| M2 | todo (D2 approved; next for the loop) | | |
+| M2 | done | approved (unattended), 2026-11-17 | "add alarm list, editor, settings and health screen" (local, not pushed; hash in the journal) |
 | M3 | todo | | |
 | M4 | todo | | |
 | DV | todo (your decision at the start: S25 over adb, or a hand-installed APK) | | |
@@ -40,12 +39,43 @@ D1 tasks (done earlier): Stitch project and design system, the 11 screens, expor
 - _(M1a decisions answered 2026-11-17: ADR-012 accepted as `START_STICKY` plus the 60 s backup alarm;
   ADR-014 stays *Proposed*; checkpoint approved. See the journal.)_
 - _(D2 approved 2026-11-17; M2 is unblocked. Re-run `/loop /milestone-loop`.)_
+- [ ] **M2, review the screenshots against the D2 designs** (`docs/design/final/01`–`11`): the app is
+  installed on the emulator; compare the list, editor, mission sheet, settings, health and onboarding.
+  Also on the S25: the steps option, the time-picker, ramp and snooze dialogs and the ringtone and file
+  pickers (the emulator has no step sensor and those dialogs were not hand-exercised).
 - [ ] **DV items collected so far (S25 Ultra or a hand-installed APK; never simulated):** run the step
   spike (grant Physical activity on the debug screen, "Step spike: start", lock the screen, walk,
   `logcat -s ChronaStepSpike`); check restart after a Recents swipe and under One UI's killers; deep
   Doze; `canUseFullScreenIntent()` on a fresh sideload; the One UI battery settings (PLAN §4).
 
 ## Checkpoints
+
+### M2 — Alarm management UI (approved unattended, 2026-11-17)
+
+Emulator `Chrona_API37`, Android 17. `./gradlew check compileDebugAndroidTestKotlin` → BUILD SUCCESSFUL
+(unit tests, `lintDebug`, `checkNoInternetPermission`); `connectedDebugAndroidTest` → 24 tests, 0 failures.
+
+| Verification | Result |
+|---|---|
+| Unit tests | 110, 0 failures: AlarmOps 15, AlarmValidation 7, NextTrigger 12, Reconciler 20, RingTransitions 16, Scheduler 3, StoreCodec 11, AlarmListState 17 (formatting across midnight and DST), HealthModel 9 |
+| Compose UI tests | 24: list lock for ringing and snoozed alarms, editor validation and save, day chips, mission sheet, steps disabled or asking for the permission, muted warning, health fixes and plurals, settings rows |
+| Create, edit, toggle | Pass (blocks 3A and 3B): store, `nextTriggerAt` and `dumpsys alarm` follow every change |
+| Delete + undo | Pass; the undo snackbar bug was found and fixed (`AppContainer.deletedAlarm`) |
+| Persists across an app restart | Pass (force-stop and relaunch keep all four alarms) |
+| Persists across a reboot | Not repeated for the UI: the store file and reschedule path are the M1c row 3 ones. The UI-created alarm uses the same file |
+| An alarm made in the UI rings | Pass: the UI-created 07:00 one-shot rang through `AlarmManager` (`NEXT`, `MediaPlayer started`), then Stop disabled it |
+| Recovery of a ring killed mid-way | Pass: force-stop while ringing, relaunch, the BACKUP alarm rang again (`RING_NOW`) and Stop cleared `activeRing` |
+| Health screen against reality | Pass (block 3C): rows followed real permission changes made with `pm revoke` and `pm grant` |
+| Spanish and English screenshots | Pass for the list, editor, mission sheet and health (`cmd locale set-app-locales`), locale reset to the system default |
+| Lint | One error (`StateFlowValueCalledInComposition` in `ChronaApp`) fixed by reading the start route once outside composition |
+
+Known gaps (not failures): the steps mission and step sensors cannot be tested on the emulator; the
+time-picker, ramp and snooze dialogs and the ringtone and file pickers were not hand-exercised; the
+Samsung card only shows on Samsung devices (unit-tested). Findings for M3: when a second alarm fires
+while another rings, `RingingService` logs "already ringing, ignoring start" and the second alarm keeps a
+stale `nextTriggerAt` in the past until a reconcile; decide in M3 whether it should queue or take over.
+Test hygiene: block 3C's `pm revoke POST_NOTIFICATIONS` was not restored for a while, which hid the ringing
+notification (health screen reported it correctly); the grants are restored now.
 
 ### M1c — Reliability matrix (approved unattended, 2026-11-17)
 
@@ -531,6 +561,108 @@ No screen has a brown background, white text on orange, or more than one orange-
   This line, the hash cell and the Now/Waiting edits ride with the next commit. APPROVED M1c (unattended).
 - 2026-11-17 16:25 STOP — M2 is gated on D2 (owned by the interactive session; the loop never picks
   the visual direction). No agent task is left that does not depend on it.
+- 2026-11-17 17:15 VALIDATED D2 (loop, on the user's request) — `aaedeff` "add screen designs" holds `docs/design/final/01`–`11` (all valid PNGs, 780 px wide), DESIGN.md (fonts Newsreader and Plus Jakarta Sans with `tnum`, Phosphor icons, component table, Stitch link), ADR-024 (Accepted) and ADR-025; the approval is the user's. Spot-checked 01 (list) and 08 (ringing) against DESIGN.md: tabular figures, one Accent CTA, Spanish copy untruncated. The M2 gate is met; the loop resumes with M2. Note: the screens show orange toggles next to the FAB; they are state, not actions.
+- 2026-11-17 17:35 DECIDED M2 dependencies and assets (advisor) — (a) approved the instrumented UI-test
+  dependencies M2's verification needs: `ui-test-junit4` (`androidTestImplementation(platform(bom))`),
+  `ui-test-manifest` (`debugImplementation` only), `androidx.test.ext:junit`, `androidx.test:runner`,
+  `testInstrumentationRunner = androidx.test.runner.AndroidJUnitRunner`; Robolectric still out. Check that
+  AGP does not uninstall the app after `connectedDebugAndroidTest` (run UI tests before the end-to-end
+  emulator checks, or reinstall); the device must be unlocked and awake. (b) fonts and Phosphor icons are
+  fetched pinned to a commit, with URL, SHA and license in a third-party file and the OFL/MIT texts
+  shipped inside the APK (`assets/licenses/`); fonts renamed to resource-safe names (`newsreader.ttf`,
+  `plus_jakarta_sans.ttf`). (c) stable `navigation-compose`, not Navigation 3.
+- 2026-11-17 17:35 DECIDED M2 design gaps (advisor), to implement in this order — block 2 first: (1)
+  `FireGuard`: `NEXT` must require a stored, enabled alarm (drop the debug allowance), delete cancels all
+  four kinds, migrate "Ring in 5 s" to stored alarms; (2) a monotonic id counter in `StoreData` (default
+  value, compatible with existing files) so a deleted-then-undone alarm never shares an id; (4) ADR-016's
+  lock lives in the repository too (a ringing or snoozed alarm cannot be toggled, edited or deleted), time
+  edits recompute `nextTriggerAt` and reschedule, disabling cancels NEXT, all as pure functions with
+  tests; (3) screens are stateless composables fed by a `UiState` + callbacks, so UI tests never touch the
+  real store or schedule alarms; (5) variable fonts: one `Font` per used weight with
+  `FontVariation.weight`, confirm 88 sp Light on a screenshot; (6) the icon converter fails on any
+  element that is not a filled `<path>`, and an icon sheet is screenshotted; (7) after adding navigation
+  and `lifecycle-viewmodel-compose`, check `:app:dependencies` (Compose not above the BOM, one lifecycle);
+  (8) move the hard-coded English strings (store and missed notifications, ringing activity) to resources
+  with Spanish translations, add `localeConfig` if `set-app-locales` does not switch; (9) window
+  background in Main and a `Scaffold` that respects insets.
+- 2026-11-17 17:36 START M2 block 1 — foundations: dependencies, fonts, icons, theme, strings, window
+  background, app shell with a DI container in `App` and a NavHost of placeholders.
+- 2026-11-17 17:55 DONE M2 block 1 (foundations) — Files: gradle/libs.versions.toml, app/build.gradle.kts
+  (navigation-compose 2.10.2, lifecycle-viewmodel-compose 2.11.0, instrumented-test deps,
+  `testInstrumentationRunner`), res/font/{newsreader,plus_jakarta_sans}.ttf, res/drawable/ic_*.xml (35
+  generated Phosphor vectors), assets/licenses/*, THIRD_PARTY.md, tools/phosphor_to_vector.py,
+  ui/theme/{Color,Type,Theme}.kt, res/values/{colors,themes,strings}.xml, res/values-es/strings.xml,
+  res/xml/locales_config.xml, AndroidManifest.xml (`Theme.Chrona`, `localeConfig`),
+  engine/{AlarmStore,ReconcileExecutor}.kt (notification texts moved to resources), debug/DesignSheetActivity.kt
+  — Verified: `./gradlew assembleDebug test` OK; screenshot of the design sheet on the emulator shows the
+  Main background, the 88 sp time clearly Light, Newsreader text, tabular figures, the orange counter and
+  all 35 icons (Light and Regular) fully drawn. Resolved versions: one lifecycle (2.11.0), Compose at the BOM
+  (1.12.1), navigation 2.10.2. Fonts: google/fonts @ 7af0d90b; icons: phosphor-icons/core @ 2b75f3ad.
+  Advisor gaps closed here: 5 (font weights), 6 (icon converter strictness + sheet), 7 (versions), 8
+  (strings: store and missed notifications; RingingActivity already used resources), 9 (window
+  background). Still ahead: 1, 2, 4 (block 2), 3 (stateless screens).
+- 2026-11-17 17:40 START M2 block 2 — pure `AlarmOps` (save / toggle / delete / restore with the ADR-016
+  lock, recompute and schedule effects), `AlarmValidation`, monotonic `StoreData.nextAlarmId`,
+  stricter `FireGuard` (NEXT needs a stored, enabled alarm), `AlarmRepository`, debug triggers moved to
+  stored alarms; all with unit tests.
+- 2026-11-17 18:10 DONE M2 block 2 — Files: engine/{AlarmOps,AlarmRepository}.kt (new), engine/Model.kt
+  (`StoreData.nextAlarmId` + `allocateId()`), engine/RingTransitions.kt (`FireGuard`: NEXT needs a stored,
+  enabled alarm), debug/DebugActivity.kt (every trigger is a stored alarm, ids from the counter),
+  AlarmOpsTest (15), AlarmValidationTest (7), RingTransitionsTest and StoreCodecTest updated — Verified:
+  `./gradlew test assembleDebug` → 84 tests, 0 failures. Closes advisor gaps 1, 2 and 4. Notes: editor bounds
+  chosen here (label ≤ 40, snooze 1–30 min and 1–10 times, volume 10–100 %, ramp 0–300 s, math 1–10,
+  shake 5–100, steps 10–500); `delete` retires the id in the counter; a rejected change (Locked, NotFound,
+  Conflict) still rewrites the unchanged store, which is harmless.
+- 2026-11-17 18:40 DONE M2 block 3A (alarm list) — Files: ui/alarms/{AlarmListState,AlarmText,AlarmListScreen,
+  AlarmListViewModel}.kt, ui/components/Components.kt (double-bezel card, eyebrow tag, pill CTA, secondary
+  pill, info pill, switch, FAB, icon), ui/ChronaApp.kt (NavHost with typed routes, undo snackbar host),
+  AppContainer.kt, App.kt (`container`), MainActivity.kt (dark system bars, ChronaApp), strings en/es,
+  AlarmListStateTest (17) — Verified: `./gradlew assembleDebug test` OK (101 tests expected, see next
+  entry); on the emulator the list shows the next-alarm header ("Rings in 9 min", the snooze counts), a
+  weekday math alarm, a snoozed alarm locked with a lock icon and "Snoozed until 17:54 · Solve to stop",
+  a dimmed disabled alarm and a one-shot, in English and, with `cmd locale set-app-locales … --locales es`,
+  in Spanish ("Suena en 9 min", "Entre semana", "Matemáticas · 3 problemas", "Pospuesta hasta …"). The
+  locked note wraps to two lines; nothing is truncated. The editor, settings, health and onboarding
+  routes are still placeholders (`Pending`). Reset the app locale at the end of M2:
+  `cmd locale set-app-locales com.nutabe.chrona.debug --locales ""`.
+- 2026-11-17 19:10 DONE M2 block 3B (editor, mission sheet, delete with undo) — Files:
+  ui/alarms/{AlarmEditorViewModel,AlarmEditorScreen,AlarmEditorHost,EditorWidgets,MissionSheet}.kt,
+  ui/ChronaApp.kt (editor route), AppContainer.kt (`deletedAlarm` state), res/drawable/ic_{minus,tag,info,
+  trend_up}.xml, strings en/es — Verified on the emulator (Spanish): the editor matches design 03 (time
+  boxes, "Suena en 12 h 8 min", L–V chips, label with counter, mission row with Accent outline, tone /
+  vibration / volume slider with round thumb / gradual rise, snooze card, save bar); editing alarm 1
+  (added Saturday) → store `repeatDays [1..6]`, `nextTriggerAt` recomputed, `dumpsys alarm` updated; new
+  alarm → id 5, counter 6, scheduled; mission sheet matches design 04 (active tag + Accent outline,
+  steps disabled with "Este dispositivo no tiene sensor de pasos", Math panel with difficulty chips and a
+  problems stepper); the list shows "Sonando · Resuelve para detener" with a lock for the ringing alarm.
+  BUG FOUND AND FIXED: the undo snackbar never appeared because the list is not composed while the editor
+  is on top, so a `SharedFlow` event had no collector; replaced by `AppContainer.deletedAlarm`
+  (`StateFlow<Alarm?>`) consumed by the list. Re-verified: delete → "Alarma eliminada · Deshacer" → undo
+  restores the same id. Also: the volume slider uses a thin track and a round thumb, the ramp row uses a
+  trend-up icon. Not done in this block: the time-picker dialog, the ramp and snooze dialogs and the
+  tone pickers were not exercised by hand yet (covered by the UI tests of block 3D).
+- 2026-11-17 19:50 DECIDED M2 espresso pin — chose to declare `androidx.test.espresso:espresso-core:3.7.0`
+  (`androidTestImplementation`) over the 3.5.0 that `ui-test-junit4` resolves: every instrumented test
+  failed on Android 17 with `NoSuchMethodException: android.hardware.input.InputManager.getInstance`
+  (a hidden API Espresso 3.5.0 reflects on). It is a version raise of a library already on the test
+  classpath, not a new capability, so it was decided here rather than sent to the advisor; flagged for
+  review. Compose is unaffected (release APK unchanged).
+- 2026-11-17 20:10 DONE M2 block 3C (settings, health, onboarding) — Files: ui/settings/SettingsScreen.kt,
+  ui/health/{HealthModel,HealthScreen,HealthHost}.kt, ui/onboarding/{OnboardingScreen,OnboardingHost}.kt,
+  ui/ChronaApp.kt (routes), strings en/es, res/drawable/ic_{arrow_clockwise,book_open,shield}.xml,
+  HealthModelTest (9) — Verified: the health screen was checked on the emulator against real permission changes made
+  with adb (`pm revoke` / `pm grant`); settings, health and onboarding match the D2 screens in the
+  emulator screenshots. Dialog-level behavior is covered by block 3D's UI tests.
+- 2026-11-17 20:40 DONE M2 block 3D (UI tests and final verification) — Files:
+  app/src/androidTest/.../ui/{AlarmListScreenTest,AlarmEditorScreenTest,HealthAndSettingsScreenTest}.kt,
+  ui/ChronaApp.kt (start route read once outside composition) — Verified: `./gradlew check
+  compileDebugAndroidTestKotlin` → BUILD SUCCESSFUL; `connectedDebugAndroidTest` 24 tests, 0 failures;
+  an alarm created in the UI rang and its one-shot was disabled by Stop; a ring killed by force-stop was
+  recovered by the BACKUP alarm.
+- 2026-11-17 20:45 FINDING M2 — a second alarm that fires while another rings is ignored by
+  `RingingService` ("already ringing, ignoring start") and keeps a past `nextTriggerAt`; to decide in M3.
+- 2026-11-17 20:50 DECIDED M2 checkpoint — approved (unattended): ADR changes for M2 none; the Espresso
+  pin stays as recorded above; reboot persistence of UI-made alarms is covered by M1c row 3.
 - 2026-11-17 DONE checkpoint D1 — approved by the user (screens fine; Stitch web canvas renders them partially). M1b's D1 gate is met.
 - 2026-11-17 START D2/1 — variants of alarm list and ringing screen, both vibe archetypes (interactive session)
 - 2026-11-17 FINDING D2/1 — Stitch timed out on 6 of 9 generation calls; saved variants/list-A1, list-A2 (Editorial) and ringing-B1 (Ethereal, rendered as desktop). list-B and ringing-A may exist only in the Stitch web UI. Waiting for the user to check the web UI and pick a direction.

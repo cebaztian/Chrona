@@ -8,7 +8,6 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.PowerManager
 import android.provider.Settings
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -69,7 +68,7 @@ class DebugActivity : ComponentActivity() {
 
     private fun ringFromIntent(source: Intent) {
         android.util.Log.i("ChronaDebug", "ringFromIntent extras=${source.extras?.keySet()}")
-        source.getLongExtra(EXTRA_RING_IN_SECONDS, 0L).takeIf { it > 0 }?.let(::ringIn)
+        source.getLongExtra(EXTRA_RING_IN_SECONDS, 0L).takeIf { it > 0 }?.let { addAlarm(it, invalidSound = false) }
         source.getLongExtra(EXTRA_ADD_ALARM_SECONDS, 0L).takeIf { it > 0 }
             ?.let {
                 addAlarm(it, source.getBooleanExtra(EXTRA_INVALID_SOUND, false), source.getBooleanExtra(EXTRA_REPEAT_DAILY, false))
@@ -82,8 +81,8 @@ class DebugActivity : ComponentActivity() {
         EngineScope.scope.launch {
             val at = Instant.now().plusSeconds(seconds)
             val local = at.atZone(ZoneId.systemDefault())
-            val updated = AlarmStore.get(appContext).update { data ->
-                val id = (data.alarms.maxOfOrNull { it.id } ?: 0L) + 1
+            val updated = AlarmStore.get(appContext).update { current ->
+                val (id, data) = current.allocateId()
                 data.copy(
                     alarms = data.alarms + Alarm(
                         id = id,
@@ -100,11 +99,6 @@ class DebugActivity : ComponentActivity() {
             val created = updated.alarms.maxBy { it.id }
             Scheduler.schedule(appContext, created.id, TriggerKind.NEXT, at)
         }
-    }
-
-    private fun ringIn(seconds: Long) {
-        Scheduler.schedule(this, DEBUG_ALARM_ID, TriggerKind.NEXT, Instant.now().plusSeconds(seconds))
-        Toast.makeText(this, "Ringing in $seconds s", Toast.LENGTH_SHORT).show()
     }
 
     private fun openSettings(action: String, withPackage: Boolean = true) {
@@ -157,8 +151,7 @@ class DebugActivity : ComponentActivity() {
             stored.forEach { alarm ->
                 Text("#${alarm.id} ${alarm.label} next=${alarm.nextTriggerAt} snooze=${alarm.snoozedUntil} used=${alarm.snoozesUsed} on=${alarm.enabled}")
             }
-            Button(onClick = { ringIn(5) }) { Text("Ring in 5 s") }
-            Button(onClick = { ringIn(60) }) { Text("Ring in 1 min") }
+            Button(onClick = { addAlarm(5, invalidSound = false) }) { Text("Ring in 5 s (stored alarm)") }
             Button(onClick = { startForegroundService(StepSpikeService.startIntent(this@DebugActivity)) }) {
                 Text("Step spike: start")
             }
@@ -186,6 +179,5 @@ class DebugActivity : ComponentActivity() {
         const val EXTRA_INVALID_SOUND = "invalid_sound"
         const val EXTRA_REPEAT_DAILY = "repeat_daily"
         private const val INVALID_SOUND_URI = "content://com.nutabe.chrona.invalid/missing.mp3"
-        private const val DEBUG_ALARM_ID = 1L
     }
 }

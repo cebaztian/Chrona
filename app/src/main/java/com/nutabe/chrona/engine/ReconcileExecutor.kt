@@ -5,6 +5,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.util.Log
+import com.nutabe.chrona.R
 import java.time.Clock
 import java.time.Instant
 import kotlinx.coroutines.launch
@@ -53,14 +54,18 @@ object ReconcileExecutor {
     private fun postMissed(context: Context, alarm: Alarm?) {
         val manager = context.getSystemService(NotificationManager::class.java)
         manager.createNotificationChannel(
-            NotificationChannel(MISSED_CHANNEL_ID, "Missed alarms", NotificationManager.IMPORTANCE_DEFAULT),
+            NotificationChannel(
+                MISSED_CHANNEL_ID,
+                context.getString(R.string.missed_channel_name),
+                NotificationManager.IMPORTANCE_DEFAULT,
+            ),
         )
         val time = alarm?.let { "%02d:%02d".format(it.hour, it.minute) }.orEmpty()
         manager.notify(
             MISSED_NOTIFICATION_BASE + (alarm?.id ?: 0L).toInt(),
             Notification.Builder(context, MISSED_CHANNEL_ID)
                 .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
-                .setContentTitle("Missed alarm")
+                .setContentTitle(context.getString(R.string.missed_title))
                 .setContentText(listOfNotNull(time.ifBlank { null }, alarm?.label?.ifBlank { null }).joinToString(" · "))
                 .build(),
         )

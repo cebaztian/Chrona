@@ -63,8 +63,8 @@ object FireGuard {
         when (kind) {
             TriggerKind.BACKUP -> activeRing?.alarmId == alarmId
             TriggerKind.SNOOZE -> alarm?.snoozedUntil != null
-            // An alarm missing from the store is a debug trigger; it is allowed to ring.
-            TriggerKind.NEXT -> alarm == null || alarm.enabled
+            // A deleted or disabled alarm must never ring, even if one of its intents was left behind.
+            TriggerKind.NEXT -> alarm != null && alarm.enabled
             TriggerKind.RING_NOW -> activeRing?.alarmId == alarmId ||
                 (alarm != null && (alarm.snoozedUntil != null || dueByTrigger(alarm, now)))
         }

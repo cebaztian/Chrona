@@ -70,6 +70,19 @@ class StoreCodecTest {
     }
 
     @Test
+    fun aFileWithoutTheIdCounterStillAllocatesAboveItsHighestId() {
+        val data = decodeOk("""{"schemaVersion":1,"alarms":[{"id":1},{"id":7}]}""")
+        assertEquals(1L, data.nextAlarmId)
+        assertEquals(8L, data.allocateId().first)
+    }
+
+    @Test
+    fun theIdCounterSurvivesARoundTrip() {
+        val data = StoreData(alarms = listOf(Alarm(id = 2)), nextAlarmId = 9)
+        assertEquals(9L, decodeOk(StoreCodec.encode(data)).nextAlarmId)
+    }
+
+    @Test
     fun garbageIsReportedAsCorrupt() {
         assertTrue(StoreCodec.decode("not json at all") is StoreCodec.DecodeResult.Corrupt)
     }

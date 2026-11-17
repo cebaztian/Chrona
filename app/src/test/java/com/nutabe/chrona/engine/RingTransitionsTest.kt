@@ -118,10 +118,10 @@ class RingTransitionsTest {
     }
 
     @Test
-    fun nextFireIsIgnoredForADisabledAlarmButAllowedForAnUnknownOne() {
+    fun nextFireNeedsAStoredEnabledAlarm() {
         assertTrue(FireGuard.isValid(TriggerKind.NEXT, 1, Alarm(id = 1), null, now))
         assertFalse(FireGuard.isValid(TriggerKind.NEXT, 1, Alarm(id = 1, enabled = false), null, now))
-        assertTrue(FireGuard.isValid(TriggerKind.NEXT, 1, null, null, now))
+        assertFalse(FireGuard.isValid(TriggerKind.NEXT, 1, null, null, now))
     }
 
     @Test

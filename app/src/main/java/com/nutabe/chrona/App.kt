@@ -8,6 +8,8 @@ import com.nutabe.chrona.engine.AlarmStore
  * lives there), never default SharedPreferences or credential-encrypted storage.
  */
 class App : Application() {
+    val container: AppContainer by lazy { AppContainer(this) }
+
     override fun onCreate() {
         super.onCreate()
         AlarmStore.get(this)

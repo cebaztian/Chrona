@@ -5,6 +5,7 @@ import android.app.NotificationManager
 import android.content.Context
 import android.util.AtomicFile
 import android.util.Log
+import com.nutabe.chrona.R
 import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -84,14 +85,18 @@ class AlarmStore private constructor(
         private fun notifyCorrupt(context: Context) {
             val manager = context.getSystemService(NotificationManager::class.java)
             manager.createNotificationChannel(
-                NotificationChannel(STORE_CHANNEL_ID, "Alarm data", NotificationManager.IMPORTANCE_DEFAULT),
+                NotificationChannel(
+                    STORE_CHANNEL_ID,
+                    context.getString(R.string.store_channel_name),
+                    NotificationManager.IMPORTANCE_DEFAULT,
+                ),
             )
             manager.notify(
                 STORE_NOTIFICATION_ID,
                 android.app.Notification.Builder(context, STORE_CHANNEL_ID)
                     .setSmallIcon(android.R.drawable.stat_notify_error)
-                    .setContentTitle("Alarms were reset")
-                    .setContentText("The alarm data could not be read. The old file was kept as $CORRUPT_FILE_NAME.")
+                    .setContentTitle(context.getString(R.string.store_corrupt_title))
+                    .setContentText(context.getString(R.string.store_corrupt_text, CORRUPT_FILE_NAME))
                     .build(),
             )
         }

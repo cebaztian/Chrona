@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Chrona</string>
+
+    <string name="ringing_channel">Alarma sonando</string>
+    <string name="ringing_title">Alarma</string>
+    <string name="ringing_text">La alarma está sonando</string>
+    <string name="ringing_stop">Detener</string>
+    <string name="ringing_snooze">Posponer</string>
+
+    <string name="store_channel_name">Datos de alarmas</string>
+    <string name="store_corrupt_title">Se restablecieron las alarmas</string>
+    <string name="store_corrupt_text">No se pudieron leer los datos de las alarmas. El archivo anterior se conservó como %1$s.</string>
+
+    <string name="missed_channel_name">Alarmas perdidas</string>
+    <string name="missed_title">Alarma perdida</string>
+
+    <string name="alarms_title">Alarmas</string>
+    <string name="settings_cd">Ajustes</string>
+    <string name="add_alarm_cd">Añadir alarma</string>
+    <string name="next_alarm_eyebrow">Próxima alarma</string>
+    <string name="rings_in">Suena en %1$s</string>
+    <string name="duration_dh">%1$d d %2$d h</string>
+    <string name="duration_hm">%1$d h %2$d min</string>
+    <string name="duration_m">%1$d min</string>
+    <string name="duration_lt_minute">menos de un minuto</string>
+
+    <string name="repeat_once">Una vez</string>
+    <string name="repeat_every_day">Todos los días</string>
+    <string name="repeat_weekdays">Entre semana</string>
+    <string name="repeat_weekends">Fines de semana</string>
+    <string name="day_initial_1">L</string>
+    <string name="day_initial_2">M</string>
+    <string name="day_initial_3">X</string>
+    <string name="day_initial_4">J</string>
+    <string name="day_initial_5">V</string>
+    <string name="day_initial_6">S</string>
+    <string name="day_initial_7">D</string>
+
+    <string name="mission_math_summary">Matemáticas · %1$d problemas</string>
+    <string name="mission_shake_summary">Agitar · %1$d</string>
+    <string name="mission_steps_summary">Pasos · %1$d</string>
+
+    <string name="locked_ringing">Sonando · Resuelve para detener</string>
+    <string name="locked_snoozed">Pospuesta hasta %1$s · Resuelve para detener</string>
+
+    <string name="empty_eyebrow">Todo tranquilo</string>
+    <string name="empty_title">Sin alarmas</string>
+    <string name="empty_subtitle">Crea tu primera alarma</string>
+    <string name="empty_note">Para apagarla tendrás que completar una misión</string>
+
+    <string name="alarm_deleted">Alarma eliminada</string>
+    <string name="undo">Deshacer</string>
+
+    <string name="back_cd">Atrás</string>
+    <string name="delete_cd">Eliminar alarma</string>
+    <string name="editor_title_new">Nueva alarma</string>
+    <string name="editor_title_edit">Editar alarma</string>
+    <string name="editor_time_cd">Elegir la hora</string>
+    <string name="editor_section_repeat">Repetir</string>
+    <string name="editor_section_label">Etiqueta</string>
+    <string name="editor_section_mission">Misión</string>
+    <string name="editor_section_sound">Sonido</string>
+    <string name="editor_section_snooze">Posponer</string>
+    <string name="editor_label_hint">Etiqueta opcional</string>
+    <string name="editor_label_count">%1$d / %2$d</string>
+    <string name="editor_save">Guardar alarma</string>
+    <string name="editor_cancel">Cancelar</string>
+    <string name="editor_ok">Aceptar</string>
+    <string name="editor_invalid">Revisa los valores marcados</string>
+    <string name="editor_locked">Esta alarma está sonando o pospuesta. Resuélvela para detenerla antes de editarla.</string>
+
+    <string name="mission_eyebrow">Misión de despertar</string>
+    <string name="mission_none_title">Ninguna</string>
+    <string name="mission_none_hint">Se apaga con un botón</string>
+    <string name="mission_math_title">Matemáticas</string>
+    <string name="mission_math_hint">Resuelve operaciones</string>
+    <string name="mission_shake_title">Agitar</string>
+    <string name="mission_shake_hint">Agita el teléfono</string>
+    <string name="mission_steps_title">Pasos</string>
+    <string name="mission_steps_hint">Camina un número de pasos</string>
+    <string name="mission_steps_needs_permission">Requiere el permiso de actividad física</string>
+    <string name="mission_steps_unavailable">Este dispositivo no tiene sensor de pasos</string>
+    <string name="mission_picker_title">Elige una misión</string>
+    <string name="mission_picker_subtitle">Para apagar la alarma tendrás que completarla</string>
+    <string name="mission_active">Activa</string>
+    <string name="mission_done">Listo</string>
+    <string name="mission_difficulty">Dificultad</string>
+    <string name="difficulty_easy">Fácil</string>
+    <string name="difficulty_medium">Media</string>
+    <string name="difficulty_hard">Difícil</string>
+    <string name="mission_problems">Problemas</string>
+    <string name="mission_shakes">Sacudidas</string>
+    <string name="mission_sensitivity">Sensibilidad</string>
+    <string name="sensitivity_low">Baja</string>
+    <string name="sensitivity_medium">Media</string>
+    <string name="sensitivity_high">Alta</string>
+    <string name="mission_steps_count">Pasos</string>
+    <string name="decrease_cd">Disminuir</string>
+    <string name="increase_cd">Aumentar</string>
+    <string name="close_cd">Cerrar</string>
+
+    <string name="sound_tone">Tono</string>
+    <string name="sound_default">Predeterminado</string>
+    <string name="sound_custom">Sonido personalizado</string>
+    <string name="sound_vibration">Vibración</string>
+    <string name="sound_volume">Volumen máximo</string>
+    <string name="sound_ramp">Subida gradual</string>
+    <string name="sound_ramp_off">Desactivada</string>
+    <string name="sound_ramp_seconds">%1$d s</string>
+    <string name="sound_pick_title">Elige un sonido</string>
+    <string name="sound_pick_ringtones">Tonos de alarma</string>
+    <string name="sound_pick_file">Elegir un archivo</string>
+    <string name="sound_pick_default">Usar el sonido predeterminado</string>
+    <string name="sound_muted_warning">El volumen de alarma está en silencio. La alarma lo subirá al sonar.</string>
+
+    <string name="snooze_title">Posponer alarma</string>
+    <string name="snooze_summary">%1$d min · máximo %2$d veces</string>
+    <string name="snooze_off">Desactivado</string>
+    <string name="snooze_minutes">Minutos</string>
+    <string name="snooze_max">Veces</string>
+    <string name="settings_title">Ajustes</string>
+    <string name="settings_general">General</string>
+    <string name="settings_health">Estado del sistema</string>
+    <string name="settings_all_good">Todo en orden</string>
+    <string name="settings_onboarding">Volver a ver la bienvenida</string>
+    <string name="settings_version">Versión</string>
+    <plurals name="health_issues">
+        <item quantity="one">%d aviso</item>
+        <item quantity="other">%d avisos</item>
+    </plurals>
+
+    <string name="health_title">Estado del sistema</string>
+    <string name="health_subtitle">Para que tus alarmas suenen siempre</string>
+    <string name="health_ok">Correcto</string>
+    <string name="health_attention">Revisar</string>
+    <string name="health_blocking">Bloqueante</string>
+    <string name="health_section_permissions">Permisos</string>
+    <string name="health_section_device">Dispositivo</string>
+    <string name="health_exact_alarms">Alarmas exactas</string>
+    <string name="health_notifications">Notificaciones</string>
+    <string name="health_full_screen">Pantalla completa</string>
+    <string name="health_activity">Actividad física</string>
+    <string name="health_activity_detail">Usada por la misión de pasos</string>
+    <string name="health_battery">Optimización de batería</string>
+    <string name="health_battery_ok">Sin restricciones</string>
+    <string name="health_battery_bad">Puede retrasar tus alarmas</string>
+    <string name="health_volume">Volumen de alarma</string>
+    <string name="health_volume_value">%1$d %%</string>
+    <string name="health_volume_muted">En silencio</string>
+    <string name="health_dnd">No molestar</string>
+    <string name="dnd_off">Desactivado</string>
+    <string name="dnd_priority">Solo prioritarias: comprueba que permita alarmas</string>
+    <string name="dnd_alarms">Solo alarmas</string>
+    <string name="dnd_total">El silencio total bloquea las alarmas</string>
+    <string name="health_samsung">Ajustes de Samsung</string>
+    <string name="health_samsung_text">Pon la batería en Sin restricciones y mantén Chrona fuera de Aplicaciones en suspensión</string>
+    <string name="health_granted">Concedido</string>
+    <string name="health_missing">Sin conceder</string>
+    <string name="health_configure">Configurar</string>
+    <string name="health_open_settings">Abrir ajustes</string>
+    <string name="health_refresh_cd">Actualizar</string>
+
+    <string name="onboarding_step">Paso %1$d de %2$d</string>
+    <string name="onboarding_skip">Omitir</string>
+    <string name="onboarding_continue">Continuar</string>
+    <string name="onboarding_finish">Terminar</string>
+    <string name="onboarding_grant">Conceder permisos</string>
+    <string name="onboarding_not_now">Ahora no</string>
+    <string name="onboarding_welcome_bar">Bienvenida</string>
+    <string name="onboarding_welcome_title">Despierta de verdad</string>
+    <string name="onboarding_welcome_body">Chrona es un despertador sin anuncios, sin cuentas y sin internet. Para apagar una alarma completas una misión.</string>
+    <string name="onboarding_permissions_bar">Permisos</string>
+    <string name="onboarding_permissions_title">Permite que Chrona te despierte</string>
+    <string name="onboarding_permissions_body">Para sonar a tiempo, incluso con el teléfono bloqueado, Chrona necesita mostrar notificaciones y abrirse a pantalla completa.</string>
+    <string name="onboarding_ready_bar">Listo</string>
+    <string name="onboarding_ready_title">Todo listo</string>
+    <string name="onboarding_ready_body">Un último paso: deja que Chrona funcione sin límites de batería para que tus alarmas nunca se retrasen.</string>
+
+    <string name="problem_hour">La hora debe estar entre 0 y 23</string>
+    <string name="problem_minute">El minuto debe estar entre 0 y 59</string>
+    <string name="problem_label">La etiqueta es demasiado larga</string>
+</resources>

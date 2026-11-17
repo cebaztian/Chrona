@@ -74,7 +74,17 @@ data class StoreData(
     val alarms: List<Alarm> = emptyList(),
     val activeRing: ActiveRing? = null,
     val settings: AppSettings = AppSettings(),
+    val nextAlarmId: Long = 1,
 ) {
+    /**
+     * Allocates an id that was never used: the counter only grows, so a deleted alarm's id is not reused
+     * while its undo is still open. Files written before the counter existed fall back to the highest id.
+     */
+    fun allocateId(): Pair<Long, StoreData> {
+        val id = maxOf(nextAlarmId, (alarms.maxOfOrNull { it.id } ?: 0L) + 1)
+        return id to copy(nextAlarmId = id + 1)
+    }
+
     companion object {
         const val CURRENT_SCHEMA_VERSION = 1
     }

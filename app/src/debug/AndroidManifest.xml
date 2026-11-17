@@ -12,6 +12,10 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name="com.nutabe.chrona.debug.DesignSheetActivity"
+            android:exported="true" />
+
         <service
             android:name="com.nutabe.chrona.debug.StepSpikeService"
             android:exported="false"
