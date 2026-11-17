@@ -68,6 +68,7 @@ class DebugActivity : ComponentActivity() {
     }
 
     private fun ringFromIntent(source: Intent) {
+        android.util.Log.i("ChronaDebug", "ringFromIntent extras=${source.extras?.keySet()}")
         source.getLongExtra(EXTRA_RING_IN_SECONDS, 0L).takeIf { it > 0 }?.let(::ringIn)
         source.getLongExtra(EXTRA_ADD_ALARM_SECONDS, 0L).takeIf { it > 0 }
             ?.let {
@@ -150,6 +151,7 @@ class DebugActivity : ComponentActivity() {
             }
             Button(onClick = { addAlarm(60, invalidSound = false) }) { Text("Add stored alarm +1 min") }
             Button(onClick = { addAlarm(60, invalidSound = true) }) { Text("Add stored alarm +1 min, invalid sound") }
+            Button(onClick = { addAlarm(240, invalidSound = false) }) { Text("Add stored alarm +4 min") }
             val stored = AlarmStore.get(this@DebugActivity).state.collectAsState().value.alarms
             Text("Stored alarms: ${stored.size}")
             stored.forEach { alarm ->

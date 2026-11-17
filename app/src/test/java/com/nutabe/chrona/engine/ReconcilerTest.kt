@@ -140,11 +140,40 @@ class ReconcilerTest {
     }
 
     @Test
-    fun repeatingAlarmKeepsItsStoredLocalTimeAfterATimezoneChange() {
-        // PLAN §2 reschedules nextTriggerAt unchanged; this documents that it is not recomputed (M1c).
+    fun bootAndStartKeepTheStoredTriggerOfARepeatingAlarm() {
+        val stored = now + Duration.ofHours(6)
+        val alarm = Alarm(id = 1, hour = 7, repeatDays = daily, nextTriggerAt = stored)
+        assertEquals(listOf(Schedule(1, TriggerKind.NEXT, stored)), reconciler.reconcile(store(alarm), now))
+    }
+
+    @Test
+    fun clockOrZoneChangeRecomputesARepeatingAlarmFromItsLocalTime() {
         val stale = now + Duration.ofHours(6)
         val alarm = Alarm(id = 1, hour = 7, repeatDays = daily, nextTriggerAt = stale)
-        assertEquals(listOf(Schedule(1, TriggerKind.NEXT, stale)), reconciler.reconcile(store(alarm), now))
+        assertEquals(
+            listOf(Schedule(1, TriggerKind.NEXT, Instant.parse("2026-11-18T12:00:00Z"))),
+            reconciler.reconcile(store(alarm), now, recomputeRepeating = true),
+        )
+    }
+
+    @Test
+    fun clockOrZoneChangeKeepsTheAbsoluteInstantOfAOneShot() {
+        val at = now + Duration.ofHours(6)
+        val alarm = Alarm(id = 1, hour = 7, nextTriggerAt = at)
+        assertEquals(listOf(Schedule(1, TriggerKind.NEXT, at)), reconciler.reconcile(store(alarm), now, recomputeRepeating = true))
+    }
+
+    @Test
+    fun clockOrZoneChangeAlsoRecomputesTheNextOccurrenceOfASnoozedRepeatingAlarm() {
+        val due = now + Duration.ofMinutes(4)
+        val alarm = Alarm(id = 1, hour = 7, repeatDays = daily, snoozedUntil = due, nextTriggerAt = now + Duration.ofHours(6))
+        assertEquals(
+            listOf(
+                Schedule(1, TriggerKind.SNOOZE, due),
+                Schedule(1, TriggerKind.NEXT, Instant.parse("2026-11-18T12:00:00Z")),
+            ),
+            reconciler.reconcile(store(alarm), now, recomputeRepeating = true),
+        )
     }
 
     @Test

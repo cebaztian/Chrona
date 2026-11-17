@@ -20,11 +20,11 @@ object ReconcileExecutor {
         EngineScope.scope.launch { run(appContext) }
     }
 
-    suspend fun run(context: Context) {
+    suspend fun run(context: Context, recomputeRepeating: Boolean = false) {
         val store = AlarmStore.get(context)
         val live = (RingingController.state.value as? RingingState.Ringing)?.alarmId
         val actions = Reconciler(NextTrigger(Clock.systemDefaultZone()))
-            .reconcile(store.state.value, Instant.now(), live)
+            .reconcile(store.state.value, Instant.now(), live, recomputeRepeating)
         Log.i(TAG, "reconcile: ${actions.size} actions $actions")
         actions.forEach { apply(context, store, it) }
     }

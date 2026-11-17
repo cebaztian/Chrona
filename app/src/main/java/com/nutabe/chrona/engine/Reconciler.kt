@@ -31,30 +31,41 @@ class Reconciler(private val nextTrigger: NextTrigger) {
     /**
      * @param liveRingAlarmId the alarm this process is ringing right now, if any. A trigger for it
      * is a no-op, never a queued second ring.
+     * @param recomputeRepeating true after a clock or time-zone change: a repeating alarm's next
+     * trigger is recomputed from its local time instead of being rescheduled unchanged. A one-shot
+     * keeps its absolute instant.
      */
-    fun reconcile(data: StoreData, now: Instant, liveRingAlarmId: Long? = null): List<ReconcileAction> {
+    fun reconcile(
+        data: StoreData,
+        now: Instant,
+        liveRingAlarmId: Long? = null,
+        recomputeRepeating: Boolean = false,
+    ): List<ReconcileAction> {
         val actions = mutableListOf<ReconcileAction>()
         for (alarm in data.alarms) {
             when {
                 data.activeRing?.alarmId == alarm.id -> {
                     if (alarm.id != liveRingAlarmId) actions += ringNow(alarm, now)
-                    if (alarm.enabled && !alarm.isOneShot) actions += nextOccurrence(alarm, now)
+                    if (alarm.enabled && !alarm.isOneShot) actions += nextOccurrence(alarm, now, recomputeRepeating)
                 }
                 alarm.snoozedUntil != null -> {
                     val due = alarm.snoozedUntil
                     actions += if (due <= now) ringNow(alarm, now) else ReconcileAction.Schedule(alarm.id, TriggerKind.SNOOZE, due)
-                    if (alarm.enabled && !alarm.isOneShot) actions += nextOccurrence(alarm, now)
+                    if (alarm.enabled && !alarm.isOneShot) actions += nextOccurrence(alarm, now, recomputeRepeating)
                 }
                 !alarm.enabled -> Unit
-                else -> actions += reconcileNever(alarm, now)
+                else -> actions += reconcileNever(alarm, now, recomputeRepeating)
             }
         }
         return actions
     }
 
-    private fun reconcileNever(alarm: Alarm, now: Instant): List<ReconcileAction> {
+    private fun reconcileNever(alarm: Alarm, now: Instant, recomputeRepeating: Boolean): List<ReconcileAction> {
         val trigger = alarm.nextTriggerAt
             ?: return listOf(ReconcileAction.Schedule(alarm.id, TriggerKind.NEXT, nextTrigger.next(alarm, now)))
+        if (recomputeRepeating && !alarm.isOneShot) {
+            return listOf(ReconcileAction.Schedule(alarm.id, TriggerKind.NEXT, nextTrigger.next(alarm, now)))
+        }
         if (trigger > now) return listOf(ReconcileAction.Schedule(alarm.id, TriggerKind.NEXT, trigger))
         if (Duration.between(trigger, now) < RingingPolicy.AUTO_SILENCE) return listOf(ringNow(alarm, now))
         val missed = ReconcileAction.PostMissed(alarm.id)
@@ -68,9 +79,9 @@ class Reconciler(private val nextTrigger: NextTrigger) {
     private fun ringNow(alarm: Alarm, now: Instant) =
         ReconcileAction.Schedule(alarm.id, TriggerKind.RING_NOW, now + RingingPolicy.RING_NOW_DELAY)
 
-    private fun nextOccurrence(alarm: Alarm, now: Instant) = ReconcileAction.Schedule(
+    private fun nextOccurrence(alarm: Alarm, now: Instant, recompute: Boolean) = ReconcileAction.Schedule(
         alarm.id,
         TriggerKind.NEXT,
-        alarm.nextTriggerAt?.takeIf { it > now } ?: nextTrigger.next(alarm, now),
+        alarm.nextTriggerAt?.takeIf { !recompute && it > now } ?: nextTrigger.next(alarm, now),
     )
 }

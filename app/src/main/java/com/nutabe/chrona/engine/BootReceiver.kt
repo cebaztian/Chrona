@@ -12,9 +12,11 @@ class BootReceiver : BroadcastReceiver() {
         Log.i("ChronaReconcile", "BootReceiver: ${intent.action}")
         val pending = goAsync()
         val appContext = context.applicationContext
+        val clockChanged = intent.action == Intent.ACTION_TIME_CHANGED || intent.action == Intent.ACTION_TIMEZONE_CHANGED
+        if (clockChanged) java.util.TimeZone.setDefault(null)
         EngineScope.scope.launch {
             try {
-                ReconcileExecutor.run(appContext)
+                ReconcileExecutor.run(appContext, recomputeRepeating = clockChanged)
             } finally {
                 pending.finish()
             }

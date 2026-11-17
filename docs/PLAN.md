@@ -418,19 +418,36 @@ Android release notes then.
   intent and it returned to the foreground (ADR-012 evidence).
 - The emulator has no step sensors, and deep Doze (`deviceidle force-idle`) cannot be forced on it.
 
-**From prior knowledge, not re-verified today. Confirm at M1:**
+**Observed in M1c (same emulator, 2026-11-17):**
+- The engine paths work with `USE_EXACT_ALARM` alone at `minSdk` 34: alarms were scheduled and fired
+  with no `SCHEDULE_EXACT_ALARM` grant.
+- Direct boot: with the device never unlocked, `LOCKED_BOOT_COMPLETED` reached `BootReceiver`, the
+  store (device-protected) was read, the alarm was rescheduled and rang, and `App.onCreate` did not
+  crash. `MainActivity` is not direct-boot aware and cannot be launched until unlock, as intended.
+- A package that was force-stopped does not receive boot broadcasts until it is launched again; the
+  first launch also clears that state only after the package settings are flushed (about 10 s).
+- `TIME_SET` and `TIMEZONE_CHANGED` must recompute repeating alarms (a stored `nextTriggerAt` keeps the
+  old local time); one-shots keep their absolute instant.
+- `STREAM_ALARM` has a minimum of 1 on API 37, so "volume 0" is not reachable; the service raises the
+  stream to the alarm's level and restores it after a stop.
+- With Do Not Disturb in priority mode (alarms allowed), the `USAGE_ALARM` playback starts.
+- After `adb install -r` with an alarm pending, `MY_PACKAGE_REPLACED` reconciliation rescheduled it and
+  it rang on time. Whether Android itself drops the pending alarms on an update was not isolated.
+- An alarm overdue by 15 min or more at boot becomes a "Missed alarm" notification and is disabled;
+  an active ring or a due snooze rings again however long ago.
+
+**Still to confirm in DV or M2 (not reachable on the emulator):**
 - `USE_EXACT_ALARM` is auto-granted but restricted by Play policy to alarm, clock and calendar apps,
   which Chrona is. `SCHEDULE_EXACT_ALARM` is user-revocable and denied by default for new installs
-  on Android 14+.
+  on Android 14+. The Settings page of the emulator shows the switch greyed out for Chrona.
 - `USE_FULL_SCREEN_INTENT` is restricted on Android 14+ to calling and alarm apps. On Play it is
-  auto-granted to alarm apps. When sideloaded, check `canUseFullScreenIntent()` and deep-link to the
-  setting if needed.
-- When the device is unlocked and in use, a full-screen intent is shown as a heads-up notification.
-- A foreground service keeps step-sensor events flowing with the screen off. This is checked by the
-  M1 sensor spike.
-- The manifest permission list in §4: that `USE_EXACT_ALARM` alone is enough at `minSdk` 34, and the
-  API levels in §10 decision 2.
-- Whether reading DND's "allow alarms" setting needs notification-policy access.
+  auto-granted to alarm apps. When sideloaded, `canUseFullScreenIntent()` and the deep link are in the
+  debug screen; the default on a fresh sideload is untested (it was granted through `adb`).
+- A foreground service keeps step-sensor events flowing with the screen off (ADR-014; the S25 step spike).
+- Deep Doze (`deviceidle` cannot reach it here), One UI battery killers, a Recents swipe on One UI, and
+  the API levels in §10 decision 2.
+- Whether reading DND's "allow alarms" setting needs notification-policy access (M2's health screen
+  shows the filter only if it does).
 
 ---
 
