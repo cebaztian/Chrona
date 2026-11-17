@@ -157,6 +157,14 @@ entry), *Open* (waiting for a decision), *Superseded*.
   `BACKUP` alarm is kept re-armed about 60 s ahead so a dead process is restarted through the normal
   receiver path. Default is to keep the backup alarm unless the spike shows `START_STICKY` is enough.
 - **Consequences:** At most about 60 s of silence after a crash.
+- **Spike evidence (M1a, API 37 emulator, AOSP; not One UI):** the process was killed mid-ring
+  (`run-as … kill <pid>`) twice. (a) App in the foreground: died 13:31:43.571, `Scheduling restart of
+  crashed service … in 1000ms`, `onStartCommand action=null` at 13:31:44.745, resumed from the active-ring
+  marker, re-entered the foreground, sound back. (b) App in the background (launcher focused): died
+  13:33:36.071, restart logged 13:33:37.261, same recovery. No foreground-service exception. So
+  `START_STICKY` alone was enough on AOSP, with about 1.2 s of silence. This does not cover One UI
+  killers or a swipe from Recents; those are DV. The decision between "`START_STICKY` alone" and "plus
+  the backup alarm" is still open and is the user's.
 
 ## ADR-013 — Missions: math, shake, steps; math as universal fallback
 
@@ -179,6 +187,12 @@ entry), *Open* (waiting for a decision), *Superseded*.
 - **Alternative if the spike fails:** count only while `RingingActivity` is visible, with the screen
   kept on; turning the screen off pauses counting and restores full volume.
 - **Consequences:** The outcome changes where the M3 sensor adapters live.
+- **Spike evidence (M1a):** the API 37 emulator cannot answer. `dumpsys sensorservice` lists no step
+  sensor, `pm list features` has no `sensor.stepcounter` or `sensor.stepdetector`, and `adb emu sensor
+  status` has no step channel. The debug `StepSpikeService` (a `systemExempted` foreground service
+  holding a partial wake lock) starts and stops cleanly and logs "sensor type 18/19 unavailable". Per
+  M1a, the proposal is kept pending DV on the S25, where the spike is run with the screen off while
+  walking; a debug-only fake step source feeds the same pipeline for tests in M3.
 
 ## ADR-015 — Auto-silence as a capped forced snooze
 

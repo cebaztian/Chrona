@@ -201,7 +201,10 @@ unknowns (step sensors in the service, service restart) get the answers the emul
 - **[agent]** Rings as a heads-up while the emulator is unlocked and in another app; tapping it
   (`input tap`) opens `RingingActivity`.
 - **[agent]** Forced Doze: `adb shell dumpsys battery unplug`, `adb shell dumpsys deviceidle
-  force-idle`, alarm fires; then `deviceidle unforce`, `battery reset`.
+  force-idle`, alarm fires; then `deviceidle unforce`, `battery reset`. ⚠️ On the API 37
+  `google_apis` image, `force-idle` stays at `INACTIVE` ("Unable to go deep idle"), so deep Doze
+  could not be reproduced: the screen-off, unplugged check is the most this emulator gives, and deep
+  Doze is re-checked in DV.
 - **[agent]** Step spike: check whether the emulator exposes step sensors (`adb shell dumpsys
   sensorservice`) and whether `adb emu sensor` can drive them.
   - If it can, verify that events keep arriving inside the service with the screen off.

@@ -403,6 +403,21 @@ Android release notes then.
   - Step counter: steps since the last reboot, up to 10 s of latency but more accurate.
 - **Accelerometer** is rate-limited for apps targeting Android 12+.
 
+**Observed in M1a (API 37 `google_apis` emulator, 2026-11-17; real-device behavior is re-checked in DV):**
+- A `setAlarmClock` ring started `RingingService` (`systemExempted`) from the receiver with the app
+  killed or in the background; no `ForegroundServiceTypeNotAllowedException`.
+- **A foreground-service notification is deferred by about 10 s**, and the full-screen intent rides on
+  it: the screen woke 10 s after the sound. `Notification.Builder.setForegroundServiceBehavior(
+  FOREGROUND_SERVICE_IMMEDIATE)` brings that to about 0.2 s. Keep it on every ringing notification.
+- With the screen locked, the full-screen intent wakes the device and `RingingActivity` shows over the
+  keyguard. Unlocked and in another app, it is a heads-up; tapping it opens `RingingActivity`.
+- `AlarmManager.canScheduleExactAlarms()` is `true` right after install with only `USE_EXACT_ALARM`
+  declared. `canUseFullScreenIntent()` was checked only after granting the app-op through `adb`
+  (`cmd appops set … USE_FULL_SCREEN_INTENT allow`), so its default on a fresh sideload is untested.
+- After a process kill mid-ring, `START_STICKY` restarted the service about 1.2 s later with a null
+  intent and it returned to the foreground (ADR-012 evidence).
+- The emulator has no step sensors, and deep Doze (`deviceidle force-idle`) cannot be forced on it.
+
 **From prior knowledge, not re-verified today. Confirm at M1:**
 - `USE_EXACT_ALARM` is auto-granted but restricted by Play policy to alarm, clock and calendar apps,
   which Chrona is. `SCHEDULE_EXACT_ALARM` is user-revocable and denied by default for new installs
