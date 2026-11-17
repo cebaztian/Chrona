@@ -4,9 +4,8 @@ Maintained by the `milestone-loop` skill (`.claude/skills/milestone-loop/SKILL.m
 resumes from this file. Answer the "Waiting for you" items here or in the session.
 
 ## Now
-- Milestone: M1a — Walking skeleton and spikes. All 7 tasks done and verified; **paused at checkpoint
-  M1a, waiting for your decisions** on ADR-012 and ADR-014 (see "Waiting for you"). M1b is gated on them.
-- M0 is done, checkpoint `auto-passed (unattended)`, committed locally as `1455276` (not pushed)
+- Milestone: M1b — done, approved unattended, committed locally. Next: M1c — Reliability matrix
+- M1a approved by the user (ADR-012 accepted with the backup alarm; ADR-014 stays *Proposed* until DV)
 - Emulator `Chrona_API37` is running (started by the user, 6 GB data partition), PIN `1234` set
 - Last update: 2026-11-17 12:58
 
@@ -16,8 +15,8 @@ resumes from this file. Answer the "Waiting for you" items here or in the sessio
 | M0 | done | auto-passed (unattended), 2026-11-17 | `1455276` "scaffold Chrona project" (local, not pushed) |
 | D1 | done | approved by the user 2026-11-17 | included in the M0 commit (no git existed before) |
 | D2 | in-progress: task 1 (variants) owned by the interactive session, so the loop must skip D2 | | |
-| M1a | done, checkpoint paused for user decisions | agent checks done 2026-11-17 | "add ringing path skeleton" (local; hash in the journal) |
-| M1b | todo (gated on D1 and M1a) | | |
+| M1a | done | approved by the user 2026-11-17 | `2b1b521` "add ringing path skeleton" (local, not pushed) |
+| M1b | done | approved (unattended), 2026-11-17 | "add alarm store, scheduler and reconciliation" (local, not pushed; hash in `git log`) |
 | M1c | todo | | |
 | M2 | todo (gated on D2) | | |
 | M3 | todo | | |
@@ -37,23 +36,36 @@ D1 tasks (done earlier): Stitch project and design system, the 11 screens, expor
 `docs/design/screens/`, data-model review.
 
 ## Waiting for you
-- [ ] **Checkpoint M1a — ADR-012 (process-death recovery).** Spike evidence is in ADR.md. On the
-  AOSP emulator, `START_STICKY` alone restarted the service in about 1.2 s, in the foreground and in
-  the background, and resumed the ring. One UI is untested. Choose: **(a)** `START_STICKY` plus the
-  60 s backup alarm (the ADR's default; PLAN §3 and M1b task 6 assume it), or **(b)** `START_STICKY`
-  alone, dropping the backup alarm. Recommendation: (a), because the emulator cannot show One UI's
-  behavior and the cost of the backup alarm is small.
-- [ ] **Checkpoint M1a — ADR-014 (steps counted in `RingingService`).** The emulator has no step
-  sensors, so the spike cannot answer. Options: **(a)** keep it *Proposed* until DV and build M3 as
-  proposed (the milestone's default), or **(b)** accept it now. Recommendation: (a).
-- [ ] **Approve the M1a checkpoint** (spike results above, plus the verification in "Checkpoints") so the
-  loop can start M1b.
+- _(M1a decisions answered 2026-11-17: ADR-012 accepted as `START_STICKY` plus the 60 s backup alarm;
+  ADR-014 stays *Proposed*; checkpoint approved. See the journal.)_
 - [ ] **DV items collected so far (S25 Ultra or a hand-installed APK; never simulated):** run the step
   spike (grant Physical activity on the debug screen, "Step spike: start", lock the screen, walk,
   `logcat -s ChronaStepSpike`); check restart after a Recents swipe and under One UI's killers; deep
   Doze; `canUseFullScreenIntent()` on a fresh sideload.
 
 ## Checkpoints
+
+### M1b — Store, scheduling and reconciliation (approved unattended, 2026-11-17)
+
+**Verification**
+| Check | Result |
+|---|---|
+| `./gradlew test` | Pass: 57 tests, 0 failures (NextTrigger 12, Reconciler 17, RingTransitions + FireGuard 16, Scheduler 3, StoreCodec 9). |
+| `./gradlew check` (lint + `checkNoInternetPermission`) | Pass. |
+| Snooze plus the next occurrence both pending (`adb shell dumpsys alarm`) | Pass. A repeating alarm that rang and was snoozed shows a SNOOZE entry at +5 min and a NEXT entry for tomorrow, with different `PendingIntent`s; `BACKUP` is cancelled. |
+| Store on device | The JSON is persisted in device-protected storage (`/data/user_de/0/<pkg>/files/alarms.json`) with `activeRing` set while ringing, and after the snooze `snoozedUntil`, `snoozesUsed: 1` and the advanced `nextTriggerAt`. |
+| Backup alarm | While ringing, `dumpsys alarm` shows the BACKUP about 60 s ahead; an explicit stop or snooze cancels it. |
+| Process kill mid-ring | The service came back about 1 s later with a null intent and resumed from the store (`activeRing`). |
+| Sound fallback chain | A stored alarm with an invalid sound URI logs "sound source 0 failed" and plays the bundled sound. |
+
+**Not covered here, on purpose:** the corrupt-file path of `AlarmStore` (renaming to `alarms.json.corrupt`
+plus its notification) is exercised only through the pure codec tests; the on-device check, the reboot
+and locked-boot paths, `TIME_SET`/`TIMEZONE_CHANGED` and the "missed alarm" notification belong to the
+M1c reliability matrix. Volume ramp and `STREAM_ALARM` restore are implemented but only the level
+change was seen in the log (`alarm stream 6 -> 7 of 7`).
+
+**Decisions:** ADR-012 *Accepted* (user, at the M1a checkpoint); ADR-014 stays *Proposed* until DV. No
+new ADR was raised by M1b.
 
 ### M1a — Walking skeleton and spikes (agent work done 2026-11-17; paused for user decisions)
 
@@ -289,6 +301,85 @@ No screen has a brown background, white text on orange, or more than one orange-
   debug-only fake step source for tests belongs to M3. To run in DV: grant Physical activity on the
   debug screen, tap "Step spike: start", lock the screen, walk, read `logcat -s ChronaStepSpike`.
 - 2026-11-17 13:38 START M1a/7 — restart spike: kill the process mid-ring, watch `START_STICKY`
+- 2026-11-17 13:50 DONE M1a/7 — restart spike (2 kills, foreground and background): see ADR-012
+  evidence. `START_STICKY` alone resumed the ring in about 1.2 s on AOSP.
+- 2026-11-17 13:52 COMMIT M1a — `2b1b521` "add ringing path skeleton" (15 files, local only).
+  STATUS.md edits after the commit (this line, the hash cell) ride with the next commit.
+- 2026-11-17 13:52 PAUSE checkpoint M1a — waiting for the ADR-012 and ADR-014 decisions and approval
+- 2026-11-17 14:05 APPLIED user answers to the M1a checkpoint — (1) ADR-012: `START_STICKY` plus the
+  backup alarm → ADR-012 *Accepted* (ADR.md updated, index row too); (2) ADR-014: stays *Proposed*
+  until DV (note added); (3) checkpoint M1a approved. M1b's gates (D1 approved, M1a decisions
+  recorded) are met.
+  FLAG: ADR-023's "Consequences" still says ADR-012 and ADR-014 stay *Proposed* until DV; it is an
+  *Accepted* ADR, so it was not edited. ADR.md and STATUS.md also carry uncommitted D2 edits
+  (ADR-024, DESIGN.md, D2 notes) from the interactive session; they are not mine and are not staged
+  with my commits unless the user says so.
+- 2026-11-17 14:35 START M1b/1,3,4 — block 1: serialization plugin + json + JUnit 4, model, `NextTrigger`,
+  `Reconciler`, each with tests. Plan: block 2 = AlarmStore, Scheduler, backup alarm, RingingController;
+  block 3 = service on the store, BootReceiver/App, debug screen, `dumpsys alarm` check.
+- 2026-11-17 14:45 POLICY — the user changed the loop's contract: minimum intervention. Decisions take
+  the recommended option, or go to the advisor when none is recommended; checkpoints approve
+  themselves (milestone and ADRs) and the loop continues; only physical DV steps and blockers are
+  left for the user. Defined in `.claude/skills/milestone-loop/SKILL.md` ("Decision policy"). The
+  uncommitted M1b dependency edits (libs.versions.toml) were rejected by the user just before this
+  change and not applied; M1b block 1 restarts from its START line.
+- 2026-11-17 14:50 DECIDED M1b dependencies — chose to add `junit:junit:4.13.2` as `testImplementation`
+  now (advisor: PLAN §6 names JUnit and M1b verification needs `./gradlew test`); declare
+  `kotlinx-coroutines-core` explicitly in block 2, pinned to the version that already resolves
+  transitively; `coroutines-test`, Robolectric and mockk NOT approved (use `runBlocking`).
+  `kotlinx-serialization-json` 1.13.0 + plugin 2.4.21 are named by M1b.
+- 2026-11-17 14:50 DECIDED M1b design (advisor) — (1) Reconciler precedence per alarm: persisted
+  `ActiveRing` (not live) → ring now; `snoozedUntil` due → ring now, future → `Schedule(SNOOZE)` plus
+  `Schedule(NEXT)` only if repeating; only then `nextTriggerAt`; (2) "ring now" is
+  `Schedule(RING_NOW, now+3 s)`; `TriggerKind` has all four kinds from the start; (3) `NextTrigger`
+  scans days 0..7 inclusive; (4) serialization: epoch-millis `Instant`, ISO-number `DayOfWeek`, stable
+  `@SerialName` on every `Mission` subtype; (5) a pure `StoreCodec` separate from the Android
+  `AlarmStore`, so store tests run on the JVM; (6) a single `AUTO_SILENCE` constant shared with the
+  service, boundary: elapsed `<` window rings, `>=` is missed. Note for M1c: PLAN says to reschedule
+  `nextTriggerAt` unchanged after `TIMEZONE_CHANGED`, which leaves repeating alarms on the old local
+  time; follow PLAN, document with a test, revisit in the M1c matrix.
+- 2026-11-17 15:05 DONE M1b/1,3,4 (block 1) — Files: gradle/libs.versions.toml, build.gradle.kts,
+  app/build.gradle.kts (serialization plugin, `kotlinx-serialization-json`, JUnit), engine/{Serializers,
+  Model,StoreCodec,NextTrigger,Reconciler}.kt, app/src/test/.../engine/{NextTriggerTest,ReconcilerTest,
+  StoreCodecTest}.kt — Verified: `./gradlew test` → 38 tests, 0 failures (12 + 17 + 9, from the XML
+  reports). The codec covers the store tests of the M1b verification (round trip, corruption, unknown
+  keys); the Android `AlarmStore` (AtomicFile) comes in block 2. Tests use JUnit only (no
+  `kotlin-test`).
+- 2026-11-17 15:10 START M1b/2,5,6,7 (block 2) — `AlarmStore` (AtomicFile, device-protected, Mutex,
+  StateFlow, corrupt-file rename + notification), `Scheduler` with (alarm id, kind) request codes
+  replacing `AlarmScheduler`, the BACKUP re-arm loop in `RingingService`, `RingingController`
+- 2026-11-17 15:25 DONE M1b/2,5,6,7 (block 2, on-device checks deferred to block 3) — Files:
+  engine/{AlarmStore,Scheduler,RingingController}.kt (new), engine/{AlarmReceiver,RingingService}.kt,
+  debug/DebugActivity.kt, engine/AlarmScheduler.kt (removed, superseded by `Scheduler`),
+  gradle/libs.versions.toml + app/build.gradle.kts (`kotlinx-coroutines-core` 1.9.0, the version already
+  resolved transitively), app/src/test/.../SchedulerTest.kt — Verified: `./gradlew test assembleDebug`
+  → BUILD SUCCESSFUL; 41 tests, 0 failures (12 + 17 + 3 + 9). Notes: `RingingService` re-arms a `BACKUP`
+  alarm 60 s ahead every 20 s while ringing and cancels it only on an explicit stop (a system-destroyed
+  service keeps it); `MAX_RING_MS` now uses `RingingPolicy.AUTO_SILENCE`; `RingingController.snooze()`
+  is deferred to block 3 with the service's snooze handling. The receiver does not yet ignore a
+  `BACKUP` fire when no ring is active; that check needs the store and lands in block 3.
+- 2026-11-17 15:40 START M1b/8,9,10 (block 3) — pure `RingTransitions` (fired / completed / snoozed) and
+  `FireGuard` (ignore stale BACKUP / RING_NOW / SNOOZE fires) with tests; then `RingingService` on the
+  store (ActiveRing, sound fallback chain, STREAM_ALARM level + restore, volume ramp, repost on swipe,
+  snooze), `ReconcileExecutor`, `BootReceiver`, `App`, Snooze button, debug list + alarm creation;
+  then the `dumpsys alarm` check. Design note: reconciliation on app start lives in `MainActivity`
+  (user-initiated start), not `App.onCreate`, because `App` also runs when an alarm fires and would
+  queue a duplicate RING_NOW.
+- 2026-11-17 15:10 DONE M1b/2,5,6,7,8,9,10 (block 3) — Files: engine/{RingTransitions(+FireGuard),
+  EngineScope,ReconcileExecutor,BootReceiver}.kt (new), App.kt (new), engine/{RingingService (rewritten
+  on the store),AlarmReceiver,RingingController}.kt, ui/ringing/RingingActivity.kt (Snooze),
+  MainActivity.kt (reconcile on start), AndroidManifest.xml (`App`, `BootReceiver` with the five
+  actions, direct-boot aware), strings.xml, debug/DebugActivity.kt (stored-alarm list, "Add stored alarm"
+  with a valid or an invalid sound URI, extras `add_alarm_seconds` / `invalid_sound` / `repeat_daily`),
+  app/src/test/.../RingTransitionsTest.kt — Verified: see the checkpoint.
+- 2026-11-17 15:12 DECIDED M1b reconcile on start — chose `MainActivity.onCreate` rather than
+  `App.onCreate` (own design call, no option was recommended or contested): `App` also runs when an
+  alarm fires and would queue a duplicate RING_NOW. `FireGuard` additionally drops stale BACKUP /
+  RING_NOW / SNOOZE fires in the receiver. Known limits recorded: the original `STREAM_ALARM` level is
+  held in memory, so after a process death mid-ring the restored value is the already-raised one;
+  one-shot completion and snooze persist asynchronously on `EngineScope`.
 - 2026-11-17 DONE checkpoint D1 — approved by the user (screens fine; Stitch web canvas renders them partially). M1b's D1 gate is met.
 - 2026-11-17 START D2/1 — variants of alarm list and ringing screen, both vibe archetypes (interactive session)
 - 2026-11-17 FINDING D2/1 — Stitch timed out on 6 of 9 generation calls; saved variants/list-A1, list-A2 (Editorial) and ringing-B1 (Ethereal, rendered as desktop). list-B and ringing-A may exist only in the Stitch web UI. Waiting for the user to check the web UI and pick a direction.
+- 2026-11-17 DONE D2/1+3 — user chose the A+B hybrid; fonts Newsreader + Plus Jakarta Sans (tnum), Phosphor icons (ADR-024; DESIGN.md §4 updated). Variants: docs/design/variants/ (5 of 8; Stitch timeouts).
+- 2026-11-17 START D2/2 — apply the hybrid to the 11 screens via edit_screens → docs/design/final/ (interactive session)

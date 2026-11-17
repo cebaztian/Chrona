@@ -31,7 +31,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.nutabe.chrona.engine.AlarmScheduler
+import androidx.compose.runtime.collectAsState
+import com.nutabe.chrona.engine.Alarm
+import com.nutabe.chrona.engine.AlarmStore
+import com.nutabe.chrona.engine.EngineScope
+import com.nutabe.chrona.engine.Scheduler
+import com.nutabe.chrona.engine.TriggerKind
+import java.time.Instant
+import java.time.ZoneId
+import kotlinx.coroutines.launch
 
 /** M1a debug screen: permission status with deep links and hardcoded ring triggers. */
 class DebugActivity : ComponentActivity() {
@@ -61,10 +69,40 @@ class DebugActivity : ComponentActivity() {
 
     private fun ringFromIntent(source: Intent) {
         source.getLongExtra(EXTRA_RING_IN_SECONDS, 0L).takeIf { it > 0 }?.let(::ringIn)
+        source.getLongExtra(EXTRA_ADD_ALARM_SECONDS, 0L).takeIf { it > 0 }
+            ?.let {
+                addAlarm(it, source.getBooleanExtra(EXTRA_INVALID_SOUND, false), source.getBooleanExtra(EXTRA_REPEAT_DAILY, false))
+            }
+    }
+
+    /** Stores an alarm that fires in [seconds] and schedules it, optionally with a broken sound URI. */
+    private fun addAlarm(seconds: Long, invalidSound: Boolean, repeatDaily: Boolean = false) {
+        val appContext = applicationContext
+        EngineScope.scope.launch {
+            val at = Instant.now().plusSeconds(seconds)
+            val local = at.atZone(ZoneId.systemDefault())
+            val updated = AlarmStore.get(appContext).update { data ->
+                val id = (data.alarms.maxOfOrNull { it.id } ?: 0L) + 1
+                data.copy(
+                    alarms = data.alarms + Alarm(
+                        id = id,
+                        hour = local.hour,
+                        minute = local.minute,
+                        label = if (invalidSound) "debug (invalid sound)" else "debug",
+                        soundUri = if (invalidSound) INVALID_SOUND_URI else null,
+                        repeatDays = if (repeatDaily) java.time.DayOfWeek.entries.toSet() else emptySet(),
+                        volumeRampSeconds = 0,
+                        nextTriggerAt = at,
+                    ),
+                )
+            }
+            val created = updated.alarms.maxBy { it.id }
+            Scheduler.schedule(appContext, created.id, TriggerKind.NEXT, at)
+        }
     }
 
     private fun ringIn(seconds: Long) {
-        AlarmScheduler.scheduleAt(this, System.currentTimeMillis() + seconds * 1000, DEBUG_ALARM_ID)
+        Scheduler.schedule(this, DEBUG_ALARM_ID, TriggerKind.NEXT, Instant.now().plusSeconds(seconds))
         Toast.makeText(this, "Ringing in $seconds s", Toast.LENGTH_SHORT).show()
     }
 
@@ -110,6 +148,13 @@ class DebugActivity : ComponentActivity() {
             StatusRow("Battery unrestricted", powerManager.isIgnoringBatteryOptimizations(packageName)) {
                 openSettings(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS, withPackage = false)
             }
+            Button(onClick = { addAlarm(60, invalidSound = false) }) { Text("Add stored alarm +1 min") }
+            Button(onClick = { addAlarm(60, invalidSound = true) }) { Text("Add stored alarm +1 min, invalid sound") }
+            val stored = AlarmStore.get(this@DebugActivity).state.collectAsState().value.alarms
+            Text("Stored alarms: ${stored.size}")
+            stored.forEach { alarm ->
+                Text("#${alarm.id} ${alarm.label} next=${alarm.nextTriggerAt} snooze=${alarm.snoozedUntil} used=${alarm.snoozesUsed} on=${alarm.enabled}")
+            }
             Button(onClick = { ringIn(5) }) { Text("Ring in 5 s") }
             Button(onClick = { ringIn(60) }) { Text("Ring in 1 min") }
             Button(onClick = { startForegroundService(StepSpikeService.startIntent(this@DebugActivity)) }) {
@@ -135,6 +180,10 @@ class DebugActivity : ComponentActivity() {
 
     companion object {
         const val EXTRA_RING_IN_SECONDS = "ring_in_seconds"
+        const val EXTRA_ADD_ALARM_SECONDS = "add_alarm_seconds"
+        const val EXTRA_INVALID_SOUND = "invalid_sound"
+        const val EXTRA_REPEAT_DAILY = "repeat_daily"
+        private const val INVALID_SOUND_URI = "content://com.nutabe.chrona.invalid/missing.mp3"
         private const val DEBUG_ALARM_ID = 1L
     }
 }

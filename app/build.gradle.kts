@@ -3,6 +3,7 @@ import com.android.build.api.artifact.SingleArtifact
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 abstract class CheckNoInternetPermission : DefaultTask() {
@@ -72,5 +73,8 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.material3)
+    implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.kotlinx.serialization.json)
     debugImplementation(libs.androidx.compose.ui.tooling)
+    testImplementation(libs.junit)
 }

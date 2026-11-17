@@ -3,6 +3,9 @@ agp = "9.5.1"
 kotlin = "2.4.21"
 composeBom = "2026.09.00"
 activityCompose = "1.13.0"
+kotlinxSerialization = "1.13.0"
+kotlinxCoroutines = "1.9.0"
+junit = "4.13.2"
 
 [libraries]
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
@@ -10,7 +13,11 @@ androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", versi
 androidx-compose-ui = { group = "androidx.compose.ui", name = "ui" }
 androidx-compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
 androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
+kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
+kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
+junit = { group = "junit", name = "junit", version.ref = "junit" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }

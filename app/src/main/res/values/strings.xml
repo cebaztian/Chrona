@@ -5,4 +5,5 @@
     <string name="ringing_title">Alarm</string>
     <string name="ringing_text">Alarm is ringing</string>
     <string name="ringing_stop">Stop</string>
+    <string name="ringing_snooze">Snooze</string>
 </resources>

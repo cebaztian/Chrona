@@ -1,0 +1,76 @@
+package com.nutabe.chrona.engine
+
+import java.time.Duration
+import java.time.Instant
+
+/** The four `PendingIntent` identities per alarm, so a snooze never replaces the next occurrence. */
+enum class TriggerKind { NEXT, SNOOZE, RING_NOW, BACKUP }
+
+object RingingPolicy {
+    /** Forced-snooze window of the auto-silence and the grace period for a never-fired trigger. */
+    val AUTO_SILENCE: Duration = Duration.ofMinutes(15)
+
+    /** "Ring now" goes through `setAlarmClock` this far ahead so the normal receiver path runs. */
+    val RING_NOW_DELAY: Duration = Duration.ofSeconds(3)
+}
+
+sealed interface ReconcileAction {
+    /**
+     * Hand [at] to `AlarmManager` for [kind]. For [TriggerKind.NEXT] the executor also stores it as
+     * the alarm's `nextTriggerAt`.
+     */
+    data class Schedule(val alarmId: Long, val kind: TriggerKind, val at: Instant) : ReconcileAction
+
+    data class PostMissed(val alarmId: Long) : ReconcileAction
+
+    data class Disable(val alarmId: Long) : ReconcileAction
+}
+
+/** Pure: turns the persisted state and the current time into the actions that restore the schedule. */
+class Reconciler(private val nextTrigger: NextTrigger) {
+    /**
+     * @param liveRingAlarmId the alarm this process is ringing right now, if any. A trigger for it
+     * is a no-op, never a queued second ring.
+     */
+    fun reconcile(data: StoreData, now: Instant, liveRingAlarmId: Long? = null): List<ReconcileAction> {
+        val actions = mutableListOf<ReconcileAction>()
+        for (alarm in data.alarms) {
+            when {
+                data.activeRing?.alarmId == alarm.id -> {
+                    if (alarm.id != liveRingAlarmId) actions += ringNow(alarm, now)
+                    if (alarm.enabled && !alarm.isOneShot) actions += nextOccurrence(alarm, now)
+                }
+                alarm.snoozedUntil != null -> {
+                    val due = alarm.snoozedUntil
+                    actions += if (due <= now) ringNow(alarm, now) else ReconcileAction.Schedule(alarm.id, TriggerKind.SNOOZE, due)
+                    if (alarm.enabled && !alarm.isOneShot) actions += nextOccurrence(alarm, now)
+                }
+                !alarm.enabled -> Unit
+                else -> actions += reconcileNever(alarm, now)
+            }
+        }
+        return actions
+    }
+
+    private fun reconcileNever(alarm: Alarm, now: Instant): List<ReconcileAction> {
+        val trigger = alarm.nextTriggerAt
+            ?: return listOf(ReconcileAction.Schedule(alarm.id, TriggerKind.NEXT, nextTrigger.next(alarm, now)))
+        if (trigger > now) return listOf(ReconcileAction.Schedule(alarm.id, TriggerKind.NEXT, trigger))
+        if (Duration.between(trigger, now) < RingingPolicy.AUTO_SILENCE) return listOf(ringNow(alarm, now))
+        val missed = ReconcileAction.PostMissed(alarm.id)
+        return if (alarm.isOneShot) {
+            listOf(missed, ReconcileAction.Disable(alarm.id))
+        } else {
+            listOf(missed, ReconcileAction.Schedule(alarm.id, TriggerKind.NEXT, nextTrigger.next(alarm, now)))
+        }
+    }
+
+    private fun ringNow(alarm: Alarm, now: Instant) =
+        ReconcileAction.Schedule(alarm.id, TriggerKind.RING_NOW, now + RingingPolicy.RING_NOW_DELAY)
+
+    private fun nextOccurrence(alarm: Alarm, now: Instant) = ReconcileAction.Schedule(
+        alarm.id,
+        TriggerKind.NEXT,
+        alarm.nextTriggerAt?.takeIf { it > now } ?: nextTrigger.next(alarm, now),
+    )
+}

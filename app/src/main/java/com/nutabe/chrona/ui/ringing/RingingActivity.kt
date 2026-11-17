@@ -18,7 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.nutabe.chrona.R
-import com.nutabe.chrona.engine.RingingService
+import com.nutabe.chrona.engine.RingingController
 
 class RingingActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -39,6 +39,9 @@ class RingingActivity : ComponentActivity() {
                         Button(onClick = ::stopAndFinish) {
                             Text(text = getString(R.string.ringing_stop))
                         }
+                        Button(onClick = ::snoozeAndFinish) {
+                            Text(text = getString(R.string.ringing_snooze))
+                        }
                     }
                 }
             }
@@ -46,7 +49,12 @@ class RingingActivity : ComponentActivity() {
     }
 
     private fun stopAndFinish() {
-        startService(RingingService.stopIntent(this))
+        RingingController.stop(this)
+        finish()
+    }
+
+    private fun snoozeAndFinish() {
+        RingingController.snooze(this)
         finish()
     }
 }
