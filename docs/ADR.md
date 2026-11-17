@@ -29,8 +29,10 @@ entry), *Open* (waiting for a decision), *Superseded*.
 | 019 | Sensor watchdog: 2 min for steps, 30 s for shake | Accepted |
 | 020 | Brand palette, dark only, no dynamic color | Accepted |
 | 021 | Screens designed in Stitch with the `high-end-visual-design` language | Accepted |
-| 022 | Unattended milestone loop: local commits, pause on user items | Accepted |
+| 022 | Unattended milestone loop: local commits, pause on user items | Superseded by 025 |
 | 023 | Develop and verify on an Android 17 emulator; real device at the end (DV) | Accepted |
+| 024 | Visual direction: editorial serif + tabular sans hybrid; Phosphor icons | Accepted |
+| 025 | Unattended loop decides on its own: recommended option, else advisor | Accepted |
 
 ---
 
@@ -287,7 +289,8 @@ entry), *Open* (waiting for a decision), *Superseded*.
 
 ## ADR-022 — Unattended milestone loop: local commits, pause on user items
 
-- **Status:** Accepted, 2026-11-17 (both rules chosen by the user).
+- **Status:** Superseded by ADR-025 (2026-11-17). Originally accepted 2026-11-17 (both rules
+  chosen by the user).
 - **Context:** The user wants the milestones worked on unattended, in another session, with
   automatic recovery after an unexpected stop. The global rules require a checkpoint before every
   commit, and many verifications need the user's hands.
@@ -322,3 +325,42 @@ entry), *Open* (waiting for a decision), *Superseded*.
   - If DV disproves ADR-014, the steps adapter changes late; PLAN.md §5.3 documents that fallback.
   - Most [user] verification steps became [agent] steps. The user reviews screenshots and
     recordings, and makes the DV decision.
+
+## ADR-024 — Visual direction: editorial serif + tabular sans hybrid; Phosphor icons
+
+- **Status:** Accepted, 2026-11-17 (chosen by the user in D2).
+- **Context:** D2 compared two archetypes in Stitch (`docs/design/variants/`):
+  - **A, Editorial:** serif, magazine-like, the most distinctive.
+  - **B, Ethereal:** geometric sans and hairlines, technical.
+
+  A's serifs had proportional digits, which make live times and counters jitter.
+- **Decision:**
+  - A's character for titles, labels and composition, with B's numerals.
+  - **Newsreader** (serif) for text, and **Plus Jakarta Sans** with `tnum` for every time and
+    counter. The figure widths were verified from the font files.
+  - No italics, and 24-hour times.
+  - **Phosphor** icons: Light in general, Regular on the ringing and mission screens.
+- **Consequences:**
+  - Two font files and about 20 vector drawables are bundled as assets; no library dependency.
+  - The system font is no longer used; this supersedes the "system font" line of the original
+    DESIGN.md.
+
+## ADR-025 — Unattended loop decides on its own: recommended option, else advisor
+
+- **Status:** Accepted, 2026-11-17 (requested by the user). Supersedes ADR-022's "pause on user
+  items".
+- **Context:** Pausing at every decision or checkpoint approval kept the loop from running truly
+  unattended.
+- **Decision:** The `milestone-loop` skill never waits for the user's answer.
+  - Every decision (an option choice, a *Proposed* or *Open* ADR, a checkpoint approval, an
+    ambiguity) takes the recommended or default option.
+  - When there is none, it follows the advisor, with one reconcile call if the advice contradicts
+    the evidence.
+  - Each decision is logged in `docs/STATUS.md` as a `DECIDED` line.
+  - From ADR-022, these stay: one local commit per checkpoint, never push, and *Accepted* ADRs are
+    superseded rather than edited.
+  - Only physical steps that need a human or the real phone (DV) still go to "Waiting for you".
+- **Consequences:**
+  - The user reviews decisions and commits after the fact, through the journal and `git log`.
+  - MILESTONES.md's "explicit approval before committing" applies to interactive work only. Under
+    the loop, a checkpoint is passed by the loop itself.

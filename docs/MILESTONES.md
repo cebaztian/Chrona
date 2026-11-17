@@ -16,8 +16,9 @@ interruption.
 - A milestone is done only when every exit criterion is met and its verification has been run, with
   the results reported (including anything skipped or failed).
 - Each milestone (or sub-milestone) ends at a **checkpoint**: a summary of what was built,
-  verification results, and explicit approval before committing. One commit per checkpoint. Nothing
-  starts before the previous checkpoint is approved, except **D (screen design)**, which runs in
+  verification results, and explicit approval before committing (under the unattended loop, the loop
+  passes the checkpoint itself and logs it; ADR-025). One commit per checkpoint. Nothing starts
+  before the previous checkpoint is approved, except **D (screen design)**, which runs in
   parallel with M0–M1a and has its own gates.
 - No dependency is added unless a task below names it. After any dependency change, `./gradlew
   check` re-runs the `INTERNET` check (M0, task 7).
@@ -151,7 +152,8 @@ PLAN.md change, if git exists by then (M0); otherwise in the M0 commit.
 3. **[user]** Decide the font and the icon set (the two candidates above, or keep the system font).
 4. **[agent]** Update DESIGN.md: typography, icons, component specs (double-bezel card, pill CTA,
    eyebrow tag), spacing and motion values, and add an ADR for the visual direction.
-5. **[agent]** Export the final screenshots to `docs/design/screens/` and link the Stitch project
+5. **[agent]** Export the final screenshots to `docs/design/final/` (the reference for M2 and M3;
+   `docs/design/screens/` keeps D1's superseded structure screens) and link the Stitch project
    from DESIGN.md.
 
 **Verification** (**[agent]**, per screen, reported as a checklist)

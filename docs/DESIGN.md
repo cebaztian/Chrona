@@ -133,20 +133,37 @@ There is **no light theme** (ADR-020).
 
 ## 4. Typography
 
-- **System font** (`FontFamily.Default`, SamsungOne on the target phone). No bundled font, no new
-  dependency.
-- **Tabular figures for every time and counter**
-  (`fontFeatureSettings = "tnum"`), so digits don't jitter as a countdown or step count changes.
+Visual direction: the **A+B hybrid** (ADR-024). The editorial serif gives the titles character,
+and a geometric sans with tabular figures carries every number.
 
-| Use | Style | Size / weight |
+- **Fonts.** Two bundled OFL fonts in `res/font`. They are assets, not dependencies, and need no
+  network.
+  - **Newsreader** (variable serif): titles, labels, dates and body copy. Its figures are tabular by
+    default.
+  - **Plus Jakarta Sans** (variable sans): every time, counter and number input, always with
+    `fontFeatureSettings = "tnum"`.
+  - Both were checked from the font files on 2026-11-17: Newsreader's default digits share one width;
+    Plus Jakarta's are proportional but it has the `tnum` feature.
+- **No italics** for times, and 24-hour format without AM/PM.
+
+| Use | Font | Size / weight |
 |---|---|---|
-| Ringing screen time | `displayLarge` override | 88 sp, Light |
-| Alarm time in the list | `displayMedium` | 48 sp, Normal |
-| Mission counter (steps, shakes) | `displayMedium` | 48 sp, Medium, Accent |
-| Math problem | `headlineLarge` | 32 sp, Medium |
-| Screen titles | `titleLarge` | 22 sp |
-| Body, settings | `bodyLarge` | 16 sp |
-| Labels, repeat days | `labelLarge` | 14 sp, Second |
+| Ringing screen time | Plus Jakarta Sans, `tnum` | 88 sp, Light |
+| Editor time | Plus Jakarta Sans, `tnum` | 64 sp, Light |
+| Alarm time in the list | Plus Jakarta Sans, `tnum` | 48 sp, Light |
+| Mission counter (steps, shakes) | Plus Jakarta Sans, `tnum` | 56 sp, Medium, Accent; the total ("/ 30") 24 sp, Regular, Second, on the same baseline |
+| Math problem and answer | Plus Jakarta Sans, `tnum` | 32 sp, Medium |
+| Screen titles | Newsreader | 28 sp, Regular |
+| Onboarding headline | Newsreader | 32 sp, Regular |
+| Alarm label on the ringing screen | Newsreader | 22 sp, Regular, Second |
+| Body, settings rows, button text | Newsreader | 16–18 sp |
+| Labels, repeat days, hints | Newsreader | 14 sp, Second |
+| Eyebrow tags | Plus Jakarta Sans | 11 sp, SemiBold, uppercase, tracking 0.16 em |
+
+- **No italics anywhere**, not only on times.
+- **Icons:** Phosphor (MIT license). Light weight in general; Regular on the ringing and mission
+  screens. Only the icons actually used are imported, as vector drawables, tinted Second at full
+  alpha (some Stitch renders draw them fainter; the renders are not the reference for icon contrast).
 
 Text must survive the system font scale up to 200 %: no fixed-height text containers.
 
@@ -154,16 +171,49 @@ Text must survive the system font scale up to 200 %: no fixed-height text contai
 
 ## 5. Shape, spacing and touch
 
-- **Spacing:** a 4 dp grid; 16 dp screen margins; 12 dp between cards.
-- **Corners:** cards 16 dp, buttons and chips fully rounded, sheets 28 dp top.
+- **Spacing:** a 4 dp grid; 20 dp screen margins; 12 dp between cards. The alarm list still shows at
+  least 4 alarms on the S25 Ultra without scrolling.
+- **Corners:** double-bezel cards 28 dp outer / 22 dp inner; text fields 16 dp; numpad keys 20 dp;
+  buttons, chips and tags fully rounded; sheets 28 dp top.
 - **Touch targets:** at least 48 dp everywhere. On the **ringing and mission screens, at least
   64 dp**, with 8 dp gaps: the user is half asleep.
-- **Numpad:** a 3 × 4 grid of 72 dp keys on `surfaceContainerHigh`; the confirm key is the screen's
-  only Accent fill.
+- **Numpad:** a 3 × 4 grid of 72 dp keys on `surfaceContainerHigh`, 8 dp gaps; the confirm key is the
+  screen's only Accent fill.
+- **Elevation:** tonal only. No shadows, blur, glow, gradients or grain.
+
+### Components
+
+| Component | Spec |
+|---|---|
+| **Double-bezel card** | Outer shell `surfaceContainerLow`, 1 dp border Second at 18 % alpha (decorative), 6 dp padding, 28 dp corners. Inner core `surfaceContainer`, 22 dp corners, a 1 dp top highlight `onSurface` at 6 %. Used for alarm cards, settings and health groups, the mission panel, permission lists. Rows inside are divided by `outlineVariant` at 50 %. |
+| **Pill CTA** (the one Accent action) | Accent fill, Main text in Newsreader 18 sp Medium, 56 dp tall (64 dp on ringing and mission screens). A trailing 32 dp circle in Main at 12 % holds the icon (arrow or check), flush with the right padding. Pressed: scale 0.98. |
+| **Secondary pill** | Transparent, 1 dp Second outline, Second text. "Snooze", "Configurar", "Probar misión". |
+| **Disabled pill** (gated "Cambiar a matemáticas", ADR-019) | Dashed 1 dp Second at 40 %; lock icon and text in Second at 45 %, lock leading. One hint line below in Newsreader 14 sp ("Disponible tras 2 min sin pasos" / "… 30 s sin agitar"). |
+| **Eyebrow tag** | Pill with 1 dp Second at 40 % outline, Plus Jakarta 11 sp SemiBold uppercase, tracking 0.16 em, Second. Above section groups and on mission screens ("MISIÓN · PASOS"). |
+| **Chips** (repeat days, difficulty) | Selected `secondaryContainer` with `onSecondaryContainer`; unselected 1 dp Second outline with Second text. Never Accent. |
+| **Switch** | On: Accent track, Main thumb. Off: `surfaceContainerHighest` track, Second outline and thumb. |
+| **Progress ring** (shake, steps) | 8 dp stroke, Accent arc with round caps on a `surfaceContainerHigh` track; mission icon and counter centered inside. Math uses a 4 dp bar instead. |
+| **Selected option** (mission picker) | 1.5 dp Accent outline and an Accent outline check; no Accent fill. |
+| **Bottom sheet** | `surfaceContainer`, 28 dp top corners, sage drag handle; flat black scrim at 40 %, no blur. |
+| **Floating action bar** (editor) | A detached pill bar in `surfaceContainerLow` with a hairline border, 16 dp from the screen edges, holding the Save pill CTA. |
+| **Volume note** (mission screens) | Speaker-low icon + "Volumen reducido mientras …" in Newsreader 14 sp Second, at the bottom (PLAN §3.6). |
 
 ---
 
 ## 6. Screens
+
+**Reference screens** (D2, approved direction): [`docs/design/final/`](design/final/) `01`–`11`,
+generated in the Stitch project `12862449765537649811` (preview links have the form
+`https://stitch.google.com/preview/12862449765537649811?node-id=<screen id>`; the final screen ids are
+listed in STATUS.md, "D2 — Final screens"). They are a visual reference
+only; M2 and M3 build them in Compose from this guide and do not convert the Stitch HTML. Where a
+render and this guide disagree, this guide wins. The D1 structure screens in `docs/design/screens/`
+are superseded.
+
+Known render quirks, not to copy: faint icons on 06 and 10; the action pills on 06 render at 40 dp
+(build them at ≥ 48 dp); settings shows "1 aviso" while the
+health screen shows two issues, and two version formats ("1.0.0", "Chrona 1.0"). Counts and the
+version come from real data.
 
 **Alarm list.** Background Main; cards on `surfaceContainerLow`. Time in `onSurface`; label and
 repeat days in Second. The enabled switch is the Accent; the disabled one has a Second outline. The
@@ -193,8 +243,10 @@ error color *and* an icon (rule 5).
 
 ## 7. Motion
 
-- Functional only: state changes (expand, toggle, progress) at about 200 ms with the standard M3
-  easing.
+- Functional only: state changes (expand, toggle, progress) at about 200 ms with
+  `CubicBezierEasing(0.32f, 0.72f, 0f, 1f)`; nothing linear. Presses scale to 0.98 with
+  `spring(dampingRatio = 0.8f, stiffness = Spring.StiffnessMediumLow)`.
+- No scroll-entry animations: lists appear instantly.
 - No decorative motion on the ringing screen; the only motion there is mission progress.
 - Respect the system's "Remove animations" setting.
 
