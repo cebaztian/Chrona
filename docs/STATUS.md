@@ -8,7 +8,9 @@ resumes from this file. Answer the "Waiting for you" items here or in the sessio
   which needs the S25 Ultra and you. `docs/DV-CHECKLIST.md` is written for both options (adb or a hand-installed
   APK). Pushed to `origin/main` on the user's request ("sync docs and repos", 2026-11-17 and 2026-11-18).
 - The emulator `Chrona_API37` has the signed release build installed (`com.nutabe.chrona`) with test alarms.
-- Last update: 2026-11-18 00:10
+- **DV in progress (user, S25 Ultra, release 0.1.1 installed):** items 1, 2, 3, 4 and 6 pass; 5, 7 and 8 are
+  partly or still open (see `docs/DV-CHECKLIST.md` Results). ADR-014 is now *Accepted*. Then comes the dogfood week.
+- Last update: 2026-11-18
 
 ## Milestones
 | Milestone | State | Checkpoint | Commit |
@@ -22,7 +24,7 @@ resumes from this file. Answer the "Waiting for you" items here or in the sessio
 | M2 | done | approved (unattended), 2026-11-17 | `3b60aa9` "add alarm list, editor, settings and health screen" |
 | M3 | done | approved (unattended), 2026-11-17 | `8fc9608` "add ringing screen and missions" |
 | M4 | done | approved (unattended), 2026-11-17 | `3a3e582` "prepare release build" |
-| DV | agent task 1 done (`docs/DV-CHECKLIST.md`, covers both options); the rest needs you | | |
+| DV | in progress: items 1, 2, 3, 4, 6 pass; 5, 7, 8 open (needs you) | | |
 
 ## Tasks (last completed milestone: M0)
 - [x] 1. SDK, system image and AVD `Chrona_API37`: done
@@ -40,7 +42,7 @@ D1 tasks (done earlier): Stitch project and design system, the 11 screens, expor
 - _(M1a decisions answered 2026-11-17: ADR-012 accepted as `START_STICKY` plus the 60 s backup alarm;
   ADR-014 stays *Proposed*; checkpoint approved. See the journal.)_
 - _(D2 approved 2026-11-17; M2 is unblocked. Re-run `/loop /milestone-loop`.)_
-- [ ] **M2, review the screenshots against the D2 designs** (`docs/design/final/01`–`11`): the app is
+- [ ] **M2, review the screenshots against the D2 designs** (the app is in daily use on the S25; not stated as reviewed) (`docs/design/final/01`–`11`): the app is
   installed on the emulator; compare the list, editor, mission sheet, settings, health and onboarding.
   Also on the S25: the steps option, the time-picker, ramp and snooze dialogs and the ringtone and file
   pickers (the emulator has no step sensor and those dialogs were not hand-exercised).
@@ -53,14 +55,14 @@ D1 tasks (done earlier): Stitch project and design system, the 11 screens, expor
   `C:/projects/Chrona/.signing/chrona-release.jks` and the passwords in `C:/projects/Chrona/keystore.properties`
   to a private place that is not this repo (a password manager plus an encrypted drive). Both are git-ignored. A
   sideloaded app can only be updated with the same key; if it is lost, the app must be uninstalled to change keys.
-- [ ] **Install the release APK and recreate your alarms** (M4 task 5; there is no export). The user installs it
-  by hand (DV option b): `C:/projects/Chrona/app/build/outputs/apk/release/app-release.apk` (`./gradlew assembleRelease`), application ID
+- [x] **Install the release APK and recreate your alarms** (done by the user; 0.1.1 installed over 0.1.0 on
+  2026-11-18). APK: `C:/projects/Chrona/app/build/outputs/apk/release/app-release.apk` (`./gradlew assembleRelease`), application ID
   `com.nutabe.chrona`; the debug build is `com.nutabe.chrona.debug`, so both can coexist.
 - [x] **Review the launcher icon:** approved by the user for now (2026-11-17), not as a final brand choice.
-- [ ] **DV items collected so far (S25 Ultra or a hand-installed APK; never simulated):** run the step
-  spike (grant Physical activity on the debug screen, "Step spike: start", lock the screen, walk,
-  `logcat -s ChronaStepSpike`); check restart after a Recents swipe and under One UI's killers; deep
-  Doze; `canUseFullScreenIntent()` on a fresh sideload; the One UI battery settings (PLAN §4).
+- [ ] **DV items still open** (`docs/DV-CHECKLIST.md`): item 5 (shake at each sensitivity, steps in hand and pocket,
+  the sensor watchdog), item 7 (a real phone call during a ring, in progress), item 8 (the 2 hour deep Doze test,
+  DND with alarms on and off, alarm volume at the minimum, the launcher icon), then the dogfood week with Alarmy as
+  backup. Passed on the S25 on 2026-11-18: items 1, 2, 3, 4 and 6, haptics and the list long-press actions.
 
 ## Checkpoints
 
@@ -838,4 +840,5 @@ No screen has a brown background, white text on orange, or more than one orange-
 - 2026-11-17 APPROVED checkpoint D2 — by the user. COMMIT "add screen designs" (local only).
 - 2026-11-17 22:30 DV (user report, hand-installed release APK on the S25 Ultra) — the *Shake* mission was tried and the *Steps* mission worked: the activity-recognition permission was requested when the alarm was created and the count advanced correctly after starting the mission. Not stated: screen off, phone in a pocket, the One UI restart and the other DV items, so ADR-014 stays *Proposed* until the user confirms the screen-off case (DV-CHECKLIST item 1).
 - 2026-11-17 22:40 USER FEEDBACK, handled outside the loop: (1) haptics were missing on most controls (time picker, Save, weekday chips, steppers, switches, numpad): every tappable now goes through `hapticClickable` and the switch, FAB, slider and time picker have their own haptics; verified with `dumpsys vibrator_manager` (performHapticFeedback from `com.nutabe.chrona.debug`). (2) The Samsung card in System status always warned "set the battery to Unrestricted": it now follows the real battery state (OK with "Keep Chrona out of Sleeping apps" when unrestricted, warning otherwise), so it no longer counts in the Settings badge. (3) Long press on an alarm opens a menu: Duplicate (opens the editor with a copy as a new alarm, not saved until Save), Select and Delete. Select starts a multi-select mode (count bar, delete, close, system back) with one undo for all deleted alarms; locked alarms cannot be selected. Verified: 178 unit tests, 40 instrumented tests, lint, and by hand on the emulator (menu, select 2, delete, undo). Release version bumped to 0.1.1 (versionCode 2) so it installs over 0.1.0.
+- 2026-11-18 DV (user report, S25 Ultra, release 0.1.1): (1) the steps mission counts with the screen off, so ADR-014 is *Accepted*; (2) restart on One UI, (3) Samsung battery settings, (4) full-screen intent and heads-up, (6) reboot without unlocking: all confirmed; an alarm left overnight rang on time. The 0.1.1 update over 0.1.0 worked, and so did haptics, Duplicate, Select, Delete and Undo. Open: item 5 (rest), 7 (in progress), 8 (the rest). Not reported, so not recorded as passed: shaking not counting as steps, and the Doze test being the full 2 hours.
 

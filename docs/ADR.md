@@ -21,7 +21,7 @@ entry), *Open* (waiting for a decision), *Superseded*.
 | 011 | Persisted runtime state and reconciliation | Accepted |
 | 012 | Process-death recovery: `START_STICKY` + backup alarm | Accepted |
 | 013 | Missions: math, shake, steps; math as universal fallback | Accepted |
-| 014 | Steps counted in `RingingService` | Proposed (kept until DV: the emulator has no step sensors) |
+| 014 | Steps counted in `RingingService` | Accepted (DV on the S25, 2026-11-18) |
 | 015 | Auto-silence as a capped forced snooze | Accepted |
 | 016 | No-bypass rules while ringing or snoozed | Accepted |
 | 017 | Debug and release builds side by side; no backup | Accepted |
@@ -169,6 +169,8 @@ entry), *Open* (waiting for a decision), *Superseded*.
   `START_STICKY` alone was enough on AOSP, with about 1.2 s of silence. This does not cover One UI
   killers or a swipe from Recents; those are DV. The user chose to keep the backup alarm anyway, since
   the emulator cannot show One UI's behavior.
+- **DV evidence (2026-11-18, S25 Ultra, One UI):** the user confirmed restart behavior (DV-CHECKLIST
+  item 2) and that an alarm set overnight rang as expected. The backup alarm stays.
 
 ## ADR-013 — Missions: math, shake, steps; math as universal fallback
 
@@ -182,7 +184,7 @@ entry), *Open* (waiting for a decision), *Superseded*.
 
 ## ADR-014 — Steps counted in `RingingService`
 
-- **Status:** **Proposed.** Decided by the M1a step spike.
+- **Status:** Accepted, 2026-11-18 (DV on the S25 Ultra: steps keep counting with the screen off).
 - **Context:** People pocket the phone or press power while walking; a listener scoped to the
   activity would stop counting.
 - **Decision (proposed):** Register `TYPE_STEP_DETECTOR` (latency 0; `TYPE_STEP_COUNTER` delta as
@@ -198,6 +200,8 @@ entry), *Open* (waiting for a decision), *Superseded*.
   M1a, the proposal is kept pending DV on the S25, where the spike is run with the screen off while
   walking; a debug-only fake step source feeds the same pipeline for tests in M3. The user confirmed
   at the M1a checkpoint (2026-11-17) that it stays *Proposed* until DV.
+- **DV evidence (2026-11-18, release APK on the S25 Ultra):** the user reported that the steps mission
+  counts with the screen off, so counting stays in the service and the fallback is not needed.
 
 ## ADR-015 — Auto-silence as a capped forced snooze
 

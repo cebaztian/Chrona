@@ -99,14 +99,14 @@ The question: do steps keep counting inside the service with the screen off and 
 
 | # | Item | Result (pass / fail / note) | Date |
 |---|---|---|---|
-| 1 | Step spike | | |
-| 2 | Restart on One UI | | |
-| 3 | Samsung battery settings | | |
-| 4 | Full-screen intent and heads-up | | |
-| 5 | Missions in hand and pocket | | |
-| 6 | Reboot without unlocking | | |
-| 7 | Real phone call | | |
-| 8 | Doze, DND, volume, icon | | |
+| 1 | Step spike | Pass: the steps mission counts with the screen off (user report) | 2026-11-18 |
+| 2 | Restart on One UI | Pass (user confirmed) | 2026-11-18 |
+| 3 | Samsung battery settings | Pass (user confirmed) | 2026-11-18 |
+| 4 | Full-screen intent and heads-up | Pass (user confirmed); an overnight alarm rang as set | 2026-11-18 |
+| 5 | Missions in hand and pocket | Partial: shake and steps tried on 2026-11-17; the rest pending | |
+| 6 | Reboot without unlocking | Pass (user confirmed) | 2026-11-18 |
+| 7 | Real phone call | In progress | |
+| 8 | Doze, DND, volume, icon | Partial: haptics, list long press (Duplicate, Select, Delete, Undo) and the 0.1.1 update over 0.1.0 pass; DND, volume at minimum, icon and the 2-hour Doze test pending | 2026-11-18 |
 
 After the run the agent fixes what failed, re-runs the affected emulator checks, and updates ADR-014 and
 ADR-012 to *Accepted* or supersedes them. Checkpoint DV: commit "validate on device".
