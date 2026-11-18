@@ -57,6 +57,9 @@ import com.nutabe.chrona.ui.components.DoubleBezelCard
 import com.nutabe.chrona.ui.components.EyebrowTag
 import com.nutabe.chrona.ui.components.InfoPill
 import com.nutabe.chrona.ui.components.PillCta
+import com.nutabe.chrona.ui.components.SecondaryPill
+import com.nutabe.chrona.mission.MissionEnvironment
+import com.nutabe.chrona.ui.ringing.MissionPreview
 import java.time.DayOfWeek
 
 /** What the device allows, read by the host: the steps mission and the muted-stream warning depend on it. */
@@ -82,6 +85,7 @@ fun AlarmEditorScreen(
 ) {
     var showTime by rememberSaveable { mutableStateOf(false) }
     var showMission by rememberSaveable { mutableStateOf(false) }
+    var showPreview by remember { mutableStateOf(false) }
     var showRamp by rememberSaveable { mutableStateOf(false) }
     var showSnooze by rememberSaveable { mutableStateOf(false) }
     var showTone by rememberSaveable { mutableStateOf(false) }
@@ -100,7 +104,18 @@ fun AlarmEditorScreen(
             TimeSection(draft, state.ringsIn) { showTime = true }
             Section(R.string.editor_section_repeat) { RepeatRow(draft.repeatDays) { day -> onChange { it.copy(repeatDays = it.repeatDays.toggled(day)) } } }
             Section(R.string.editor_section_label) { LabelField(draft.label, AlarmProblem.LABEL_TOO_LONG in state.problems) { text -> onChange { it.copy(label = text) } } }
-            Section(R.string.editor_section_mission) { MissionRow(draft.mission) { showMission = true } }
+            Section(R.string.editor_section_mission) {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    MissionRow(draft.mission) { showMission = true }
+                    if (draft.mission != Mission.None) {
+                        SecondaryPill(
+                            stringResource(R.string.mission_preview),
+                            onClick = { showPreview = true },
+                            modifier = Modifier.fillMaxWidth().testTag("mission-preview"),
+                        )
+                    }
+                }
+            }
             Section(R.string.editor_section_sound) {
                 DoubleBezelCard(Modifier.fillMaxWidth()) {
                     SettingRow(R.drawable.ic_music_notes, stringResource(R.string.sound_tone), value = soundLabel, onClick = { showTone = true }, modifier = Modifier.testTag("tone-row"))
@@ -134,6 +149,18 @@ fun AlarmEditorScreen(
     }
     if (showMission) {
         MissionSheet(draft.mission, env, { m -> onChange { it.copy(mission = m) } }, onRequestStepsPermission) { showMission = false }
+    }
+    if (showPreview) {
+        MissionPreview(
+            mission = draft.mission,
+            soundUri = draft.soundUri,
+            environment = MissionEnvironment(
+                hasShakeSensor = true,
+                hasStepSensor = env.hasStepSensor,
+                activityRecognitionGranted = env.activityRecognitionGranted,
+            ),
+            onClose = { showPreview = false },
+        )
     }
     if (showRamp) {
         RampDialog(draft.volumeRampSeconds, { s -> onChange { it.copy(volumeRampSeconds = s) }; showRamp = false }) { showRamp = false }

@@ -180,4 +180,40 @@
     <string name="problem_hour">La hora debe estar entre 0 y 23</string>
     <string name="problem_minute">El minuto debe estar entre 0 y 59</string>
     <string name="problem_label">La etiqueta es demasiado larga</string>
+
+    <string name="notification_solve">Resolver para detener</string>
+    <string name="notification_snooze">Posponer</string>
+    <string name="ringing_eyebrow">Alarma</string>
+    <string name="ringing_mission_required">Misión requerida</string>
+    <string name="ringing_start_mission">Iniciar misión</string>
+    <string name="ringing_snooze_minutes">Posponer %1$d min</string>
+    <plurals name="ringing_snoozes_left">
+        <item quantity="one">Queda %1$d de %2$d posposición</item>
+        <item quantity="other">Quedan %1$d de %2$d posposiciones</item>
+    </plurals>
+    <string name="ringing_no_snoozes">Sin posposiciones</string>
+    <string name="ringing_fallback_note">Este dispositivo no puede hacer la misión elegida, así que usa matemáticas</string>
+    <string name="ringing_detail_math">%1$d problemas · %2$s</string>
+    <string name="ringing_detail_shake">%1$d sacudidas</string>
+    <string name="ringing_detail_steps">%1$d pasos</string>
+    <string name="mission_problem_of">Problema %1$d de %2$d</string>
+    <string name="mission_eyebrow_shake">Misión · Agitar</string>
+    <string name="mission_eyebrow_steps">Misión · Pasos</string>
+    <string name="mission_wrong">Incorrecto · nuevo problema</string>
+    <string name="mission_shake_instruction">Agita el teléfono con fuerza</string>
+    <string name="mission_steps_instruction">Camina para apagar la alarma</string>
+    <string name="mission_steps_lock_hint">Puedes bloquear la pantalla; seguiremos contando</string>
+    <string name="mission_steps_unit">pasos</string>
+    <string name="mission_switch_to_math">Cambiar a matemáticas</string>
+    <string name="mission_switch_hint_shake">Disponible tras 30 s sin agitar</string>
+    <string name="mission_switch_hint_steps">Disponible tras 2 min sin pasos</string>
+    <string name="mission_volume_math">Volumen reducido mientras resuelves</string>
+    <string name="mission_volume_shake">Volumen reducido mientras agitas</string>
+    <string name="mission_volume_steps">Volumen reducido mientras caminas</string>
+    <string name="numpad_backspace">Borrar</string>
+    <string name="numpad_confirm">Confirmar</string>
+    <string name="mission_preview">Probar misión</string>
+    <string name="preview_sound_off">Sin sonido</string>
+    <string name="preview_close">Cerrar vista previa</string>
+    <string name="preview_done">Misión completada</string>
 </resources>

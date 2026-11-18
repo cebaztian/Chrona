@@ -75,7 +75,11 @@ data class StoreData(
     val activeRing: ActiveRing? = null,
     val settings: AppSettings = AppSettings(),
     val nextAlarmId: Long = 1,
+    val ringQueue: List<Long> = emptyList(),
 ) {
+    /** True while the alarm rings or waits its turn behind the ringing one. */
+    fun isRingBusy(alarmId: Long): Boolean = activeRing?.alarmId == alarmId || alarmId in ringQueue
+
     /**
      * Allocates an id that was never used: the counter only grows, so a deleted alarm's id is not reused
      * while its undo is still open. Files written before the counter existed fall back to the highest id.

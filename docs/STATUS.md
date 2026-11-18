@@ -4,10 +4,10 @@ Maintained by the `milestone-loop` skill (`.claude/skills/milestone-loop/SKILL.m
 resumes from this file. Answer the "Waiting for you" items here or in the session.
 
 ## Now
-- **M2 done, checkpoint approved (unattended) 2026-11-17.** Next: M3 — Ringing screen and missions. Local
-  commits only: `origin/main` is at `946ef02`; `aaedeff` (D2) and the M2 commit are not on GitHub.
-- The emulator `Chrona_API37` is running with the debug build and four sample alarms, PIN `1234`.
-- Last update: 2026-11-17 18:30
+- **M3 done and approved (unattended) 2026-11-17.** Next: M4 - Hardening and release. Local commits only:
+  `origin/main` is at `946ef02`; `aaedeff`, the M2 and M3 commits are not on GitHub.
+- The emulator `Chrona_API37` is running with the debug build; its store holds only test alarms. PIN `1234`.
+- Last update: 2026-11-17 20:40
 
 ## Milestones
 | Milestone | State | Checkpoint | Commit |
@@ -19,7 +19,7 @@ resumes from this file. Answer the "Waiting for you" items here or in the sessio
 | M1b | done | approved (unattended), 2026-11-17 | `0a3ca70` "add alarm store, scheduler and reconciliation" (local, not pushed) |
 | M1c | done | approved (unattended), 2026-11-17 | `ed0ff0b` "verify engine reliability" (local, not pushed) |
 | M2 | done | approved (unattended), 2026-11-17 | `3b60aa9` "add alarm list, editor, settings and health screen" (local, not pushed) |
-| M3 | todo | | |
+| M3 | done | approved (unattended), 2026-11-17 | HASH_M3 "add ringing screen and missions" (local, not pushed) |
 | M4 | todo | | |
 | DV | todo (your decision at the start: S25 over adb, or a hand-installed APK) | | |
 
@@ -43,12 +43,45 @@ D1 tasks (done earlier): Stitch project and design system, the 11 screens, expor
   installed on the emulator; compare the list, editor, mission sheet, settings, health and onboarding.
   Also on the S25: the steps option, the time-picker, ramp and snooze dialogs and the ringtone and file
   pickers (the emulator has no step sensor and those dialogs were not hand-exercised).
+- [ ] **M3, review the screen recording against the D2 designs** (`docs/design/final/08` to `11`): the file is
+  `C:/Users/SEBASR~1/AppData/Local/Temp/claude/1b122e099d7633c6/8760ad08-adb1-4aa7-a43d-996edcad2709/scratchpad/m3-ring-and-math.mp4`
+  (ring screen, "Start mission", a wrong answer, two problems; the shake and steps screens were checked by
+  screenshots). Also on the S25: the steps mission with real walking and the screen off (ADR-014, the step spike),
+  the shake feel at each sensitivity, and the haptic on a wrong answer.
 - [ ] **DV items collected so far (S25 Ultra or a hand-installed APK; never simulated):** run the step
   spike (grant Physical activity on the debug screen, "Step spike: start", lock the screen, walk,
   `logcat -s ChronaStepSpike`); check restart after a Recents swipe and under One UI's killers; deep
   Doze; `canUseFullScreenIntent()` on a fresh sideload; the One UI battery settings (PLAN §4).
 
 ## Checkpoints
+
+### M3 - Ringing screen and missions (approved unattended, 2026-11-17)
+
+Emulator `Chrona_API37`, Android 17. `./gradlew check` -> BUILD SUCCESSFUL (171 unit tests, `lintDebug`,
+`checkNoInternetPermission`); `connectedDebugAndroidTest` -> 35 tests, 0 failures.
+
+| Verification | Result |
+|---|---|
+| Unit tests | Math bounds and determinism per tier, shake detector (debounce, thresholds, gravity filter), cadence filter, counter delta, watchdogs, mission runner transitions, ring transitions (queue, forced snoozes), stop gate, reconciler gap, store codec |
+| Math mission | Pass: numpad only, wrong answer shows "Incorrect - new problem" and a new problem, completion stops the ring |
+| Shake mission | Pass: slow tilts count 0; strong bursts complete it at MEDIUM and HIGH; moderate bursts do not count at LOW |
+| Steps mission | Pass with the debug step source (the emulator has no step sensor): a burst of 30 steps at 80 ms counts 1, walking cadence completes. Real walking: DV |
+| Sensor watchdog (ADR-019) | Pass: with events suppressed the locked "Switch to math" pill unlocks after 30 s and the fallback math ends the ring. The 2 min steps window is covered by unit tests |
+| Volume | Duck on the player gain, restored after 15 s without progress; a lowered `STREAM_ALARM` was restored by the observer; hardware keys consumed by the activity |
+| Notification | Actions "Solve to stop" and "Snooze" only, no Dismiss; a swiped notification is reposted |
+| No-bypass | Pass: Back, Home, Recents, shade, volume, a stop intent from outside (refused), editing or toggling the ringing alarm (locked), reboot while ringing (resumed over the keyguard, the mission is still required) |
+| Second alarm | Pass: two alarms in the same minute, the second queued (persisted across a reinstall) and rang after the first was solved |
+| Snooze | Pass: state, locked list, re-ring after 5 min, counters reset on solve |
+| Auto-silence | Pass: 15 min ring, 1 min gap, three forced snoozes (`forcedSnoozeCycles` 1, 2, 3), then "Missed alarm" and a disabled one-shot, about 63 min in all |
+| Mission preview | Pass: "Try mission" in the editor runs the mission UI without the service, with a sound-off toggle |
+| Screen recording | `m3-ring-and-math.mp4` in the scratchpad (see "Waiting for you") |
+
+Decisions recorded: second alarm queued and persisted; mission state in the service, preview without it; the
+stop gate; ducking on the player gain; ADR-014 built as proposed but left *Proposed* (the user's M1a
+instruction, until the S25 spike). Known gaps (not failures): steps with real sensors, the gravity-filter
+fallback and the 2 min steps window on a device; the power-off over 15 min mid-ring was not repeated (M1c rows 10
+and 11 cover the engine); during a forced-snooze gap a queued second alarm waits for the first to finish;
+a queued alarm shows "Ringing - Solve to stop" in the list.
 
 ### M2 — Alarm management UI (approved unattended, 2026-11-17)
 
@@ -664,6 +697,55 @@ No screen has a brown background, white text on orange, or more than one orange-
 - 2026-11-17 20:50 DECIDED M2 checkpoint — approved (unattended): ADR changes for M2 none; the Espresso
   pin stays as recorded above; reboot persistence of UI-made alarms is covered by M1c row 3.
 - 2026-11-17 20:55 COMMIT M2 — `3b60aa9` "add alarm list, editor, settings and health screen" (local only).
+- 2026-11-17 21:05 START M3 — ringing screen and missions; blocks: (1) pure `mission/` logic and ring
+  transitions with tests first, (2) service: mission state, volume duck, watchdogs, sensors, notification
+  actions, auto-silence, queue, (3) `RingingActivity` UI, mission screens and the editor preview, (4)
+  no-bypass verification on the emulator.
+- 2026-11-17 21:06 DECIDED M3 second alarm — queued, rings after the current one ends (stated in
+  MILESTONES M3 task 8); the queue is persisted in the store (a field with a default) so it survives process
+  death, and a queued repeating alarm still gets its `NEXT` rescheduled. Advisor review of the plan.
+- 2026-11-17 21:06 DECIDED M3 mission state and preview — steps are counted in `RingingService` and the
+  activity only displays progress (PLAN §5.3); the preview runs the mission UI without the service, with
+  sensor listeners scoped to it (task 10). Advisor review of the plan.
+- 2026-11-17 21:07 DECIDED M3 ADR-014 — build the sensor adapters in the service, the option the ADR
+  proposes, behind a `StepSource` interface so the activity-scoped alternative stays a swap. The status stays
+  *Proposed*: the user confirmed at M1a that it waits for the S25 spike (DV), and that instruction takes
+  precedence over the decision policy. Recorded as stated default, not accepted.
+- 2026-11-17 21:08 DECIDED M3 stop gate — `ACTION_STOP` is honored in the service only when the mission is
+  `None` or already done; the notification's "Solve to stop" opens `RingingActivity` and never stops.
+  Ducking uses the player gain, not `STREAM_ALARM`, so the stream observer cannot undo it. (Advisor.)
+- 2026-11-17 21:50 DONE M3 block 1 (pure logic) — Files: mission/{MathGenerator,MathSession,ShakeDetector,
+  StepFilters,Watchdog,MissionResolver,MissionRunner}.kt, engine/{Model,RingTransitions,Reconciler,AlarmOps}.kt
+  (`StoreData.ringQueue` + `isRingBusy`, queue in `fired`, `nextQueued`, `autoSilenced` forced snooze with a
+  1 min gap and 3 cycles, reconcile of a ring in its gap), ui/alarms/{AlarmEditorViewModel,AlarmListState}.kt
+  (lock through `isRingBusy`), MathTest 10, SensorMissionTest 19, MissionRunnerTest 16, +11 RingTransitions,
+  +1 Reconciler, +2 StoreCodec — Verified: `./gradlew test` → 169 tests, 0 failures.
+- 2026-11-17 22:30 DONE M3 blocks 2 and 3 (service, sensors, ringing screen, previews) — Files:
+  engine/{RingingService (mission state, duck by player gain, watchdog tick, stop gate, forced snooze, queue,
+  stream observer, notification actions "Solve to stop" and "Snooze"),RingingController (RingInfo, RingingState,
+  RingActions),AlarmPlayer,MissionSensors (+SensorOverrides debug hooks),EngineScope.serial,ReconcileExecutor}.kt,
+  mission/MissionRunner.kt, ui/ringing/{RingingActivity,RingingScreen,MissionScreens,MissionPreview}.kt,
+  ui/alarms/AlarmEditorScreen.kt ("Try mission"), AndroidManifest (portrait for the ringing screen), strings en/es,
+  ic_{backspace,x_circle,timer}_regular.xml (Phosphor), debug DebugSensorReceiver + DebugActivity mission extras,
+  StopGate + tests, RingingScreensTest (11) — Verified on the emulator: math mission (wrong answer shows
+  "Incorrect · new problem" and a new problem; 2 and 3 problems solved; Stop only appears for no-mission alarms);
+  shake (slow tilt counts 0, strong bursts complete it at MEDIUM and HIGH, moderate bursts do not count at LOW);
+  steps with the debug source (a burst of 30 steps at 80 ms counts 1, walking cadence completes); sensor watchdog
+  (with events suppressed the "Switch to math" pill unlocks after 30 s and the fallback math ends the ring);
+  second alarm in the same minute (queued, rang after the first was solved, queue persisted across a reinstall);
+  snooze (state, locked list, re-ring after 5 min, counters reset on solve); no-bypass: Back, Home, Recents and a
+  swiped-away notification (reposted) leave the ring going; the alarm stream lowered behind our back is restored;
+  the stop intent cannot be sent from outside; the ringing alarm is locked in the app; a reboot while ringing
+  resumes the ring over the keyguard and solving the math there ends it; `connectedDebugAndroidTest` 35 tests,
+  0 failures; `./gradlew check` green.
+- 2026-11-17 22:31 FINDING M3 — rotating the emulator made the ringing screen landscape and cut off its buttons;
+  fixed by locking `RingingActivity` to portrait (the ring-infrastructure tests had changed orientation through the
+  emulator accelerometer, which a phone tilted on a nightstand could also do).
+- 2026-11-17 20:40 DONE M3 verification - auto-silence ran 19:26 to 20:29 (three forced snoozes, then
+  "Missed alarm"); the screen recording was made; PLAN section 9 got the observed facts; `./gradlew check` green
+  with 171 unit tests; `connectedDebugAndroidTest` 35 tests, 0 failures.
+- 2026-11-17 20:42 DECIDED M3 checkpoint - approved (unattended): ADR changes none (ADR-014 stays *Proposed*
+  until DV, per the user); the known gaps above go to DV or later.
 - 2026-11-17 DONE checkpoint D1 — approved by the user (screens fine; Stitch web canvas renders them partially). M1b's D1 gate is met.
 - 2026-11-17 START D2/1 — variants of alarm list and ringing screen, both vibe archetypes (interactive session)
 - 2026-11-17 FINDING D2/1 — Stitch timed out on 6 of 9 generation calls; saved variants/list-A1, list-A2 (Editorial) and ringing-B1 (Ethereal, rendered as desktop). list-B and ringing-A may exist only in the Stitch web UI. Waiting for the user to check the web UI and pick a direction.

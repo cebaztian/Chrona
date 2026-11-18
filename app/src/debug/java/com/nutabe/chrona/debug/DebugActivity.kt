@@ -34,6 +34,8 @@ import androidx.compose.runtime.collectAsState
 import com.nutabe.chrona.engine.Alarm
 import com.nutabe.chrona.engine.AlarmStore
 import com.nutabe.chrona.engine.EngineScope
+import com.nutabe.chrona.engine.Mission
+import com.nutabe.chrona.engine.Sensitivity
 import com.nutabe.chrona.engine.Scheduler
 import com.nutabe.chrona.engine.TriggerKind
 import java.time.Instant
@@ -71,12 +73,39 @@ class DebugActivity : ComponentActivity() {
         source.getLongExtra(EXTRA_RING_IN_SECONDS, 0L).takeIf { it > 0 }?.let { addAlarm(it, invalidSound = false) }
         source.getLongExtra(EXTRA_ADD_ALARM_SECONDS, 0L).takeIf { it > 0 }
             ?.let {
-                addAlarm(it, source.getBooleanExtra(EXTRA_INVALID_SOUND, false), source.getBooleanExtra(EXTRA_REPEAT_DAILY, false))
+                addAlarm(
+                    it,
+                    source.getBooleanExtra(EXTRA_INVALID_SOUND, false),
+                    source.getBooleanExtra(EXTRA_REPEAT_DAILY, false),
+                    missionFrom(source),
+                    source.getStringExtra(EXTRA_LABEL),
+                )
             }
     }
 
+    /** `--es mission math|shake|steps`, `--ei mission_count N`, `--es sensitivity low|medium|high`. */
+    private fun missionFrom(source: Intent): Mission {
+        val count = source.getIntExtra(EXTRA_MISSION_COUNT, 0)
+        return when (source.getStringExtra(EXTRA_MISSION)) {
+            "math" -> Mission.Math(count = count.takeIf { it > 0 } ?: 3)
+            "shake" -> Mission.Shake(
+                count = count.takeIf { it > 0 } ?: 5,
+                sensitivity = runCatching { Sensitivity.valueOf(source.getStringExtra(EXTRA_SENSITIVITY).orEmpty().uppercase()) }
+                    .getOrDefault(Sensitivity.MEDIUM),
+            )
+            "steps" -> Mission.Steps(count = count.takeIf { it > 0 } ?: 10)
+            else -> Mission.None
+        }
+    }
+
     /** Stores an alarm that fires in [seconds] and schedules it, optionally with a broken sound URI. */
-    private fun addAlarm(seconds: Long, invalidSound: Boolean, repeatDaily: Boolean = false) {
+    private fun addAlarm(
+        seconds: Long,
+        invalidSound: Boolean,
+        repeatDaily: Boolean = false,
+        mission: Mission = Mission.None,
+        label: String? = null,
+    ) {
         val appContext = applicationContext
         EngineScope.scope.launch {
             val at = Instant.now().plusSeconds(seconds)
@@ -88,7 +117,8 @@ class DebugActivity : ComponentActivity() {
                         id = id,
                         hour = local.hour,
                         minute = local.minute,
-                        label = if (invalidSound) "debug (invalid sound)" else "debug",
+                        label = label ?: if (invalidSound) "debug (invalid sound)" else "debug",
+                        mission = mission,
                         soundUri = if (invalidSound) INVALID_SOUND_URI else null,
                         repeatDays = if (repeatDaily) java.time.DayOfWeek.entries.toSet() else emptySet(),
                         volumeRampSeconds = 0,
@@ -176,6 +206,10 @@ class DebugActivity : ComponentActivity() {
     companion object {
         const val EXTRA_RING_IN_SECONDS = "ring_in_seconds"
         const val EXTRA_ADD_ALARM_SECONDS = "add_alarm_seconds"
+        const val EXTRA_MISSION = "mission"
+        const val EXTRA_MISSION_COUNT = "mission_count"
+        const val EXTRA_SENSITIVITY = "sensitivity"
+        const val EXTRA_LABEL = "label"
         const val EXTRA_INVALID_SOUND = "invalid_sound"
         const val EXTRA_REPEAT_DAILY = "repeat_daily"
         private const val INVALID_SOUND_URI = "content://com.nutabe.chrona.invalid/missing.mp3"

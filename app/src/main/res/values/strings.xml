@@ -180,4 +180,40 @@
     <string name="problem_hour">The hour must be between 0 and 23</string>
     <string name="problem_minute">The minute must be between 0 and 59</string>
     <string name="problem_label">The label is too long</string>
+
+    <string name="notification_solve">Solve to stop</string>
+    <string name="notification_snooze">Snooze</string>
+    <string name="ringing_eyebrow">Alarm</string>
+    <string name="ringing_mission_required">Required mission</string>
+    <string name="ringing_start_mission">Start mission</string>
+    <string name="ringing_snooze_minutes">Snooze %1$d min</string>
+    <plurals name="ringing_snoozes_left">
+        <item quantity="one">%1$d of %2$d snooze left</item>
+        <item quantity="other">%1$d of %2$d snoozes left</item>
+    </plurals>
+    <string name="ringing_no_snoozes">No snoozes left</string>
+    <string name="ringing_fallback_note">This device cannot run the chosen mission, so it uses math</string>
+    <string name="ringing_detail_math">%1$d problems · %2$s</string>
+    <string name="ringing_detail_shake">%1$d shakes</string>
+    <string name="ringing_detail_steps">%1$d steps</string>
+    <string name="mission_problem_of">Problem %1$d of %2$d</string>
+    <string name="mission_eyebrow_shake">Mission · Shake</string>
+    <string name="mission_eyebrow_steps">Mission · Steps</string>
+    <string name="mission_wrong">Incorrect · new problem</string>
+    <string name="mission_shake_instruction">Shake the phone hard</string>
+    <string name="mission_steps_instruction">Walk to turn off the alarm</string>
+    <string name="mission_steps_lock_hint">You can lock the screen; we keep counting</string>
+    <string name="mission_steps_unit">steps</string>
+    <string name="mission_switch_to_math">Switch to math</string>
+    <string name="mission_switch_hint_shake">Available after 30 s without shaking</string>
+    <string name="mission_switch_hint_steps">Available after 2 min without steps</string>
+    <string name="mission_volume_math">Volume lowered while you solve</string>
+    <string name="mission_volume_shake">Volume lowered while you shake</string>
+    <string name="mission_volume_steps">Volume lowered while you walk</string>
+    <string name="numpad_backspace">Delete</string>
+    <string name="numpad_confirm">Confirm</string>
+    <string name="mission_preview">Try mission</string>
+    <string name="preview_sound_off">Sound off</string>
+    <string name="preview_close">Close preview</string>
+    <string name="preview_done">Mission complete</string>
 </resources>

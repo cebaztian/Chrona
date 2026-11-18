@@ -1,5 +1,6 @@
 package com.nutabe.chrona.engine
 
+import android.Manifest
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -7,11 +8,11 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
-import android.media.AudioAttributes
+import android.database.ContentObserver
+import android.graphics.drawable.Icon
 import android.media.AudioManager
-import android.media.MediaPlayer
-import android.net.Uri
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
@@ -20,8 +21,12 @@ import android.os.SystemClock
 import android.os.VibrationAttributes
 import android.os.VibrationEffect
 import android.os.VibratorManager
+import android.provider.Settings
 import android.util.Log
 import com.nutabe.chrona.R
+import com.nutabe.chrona.mission.MissionEnvironment
+import com.nutabe.chrona.mission.MissionResolver
+import com.nutabe.chrona.mission.MissionRunner
 import com.nutabe.chrona.ui.ringing.RingingActivity
 import java.time.Clock
 import java.time.Duration
@@ -32,18 +37,32 @@ import kotlinx.coroutines.launch
 /**
  * Foreground service that owns a ring. The ring is persisted as an `ActiveRing` in the store, so a
  * restart with a null intent resumes it. While ringing it keeps a `BACKUP` alarm armed (ADR-012) so a
- * dead process is restarted through the normal receiver path.
+ * dead process is restarted through the normal receiver path. It also runs the mission, so a pocketed
+ * phone still counts steps; the activity only shows [RingingController.state].
  */
-class RingingService : Service() {
+class RingingService : Service(), RingActions {
     private val handler = Handler(Looper.getMainLooper())
     private val transitions = RingTransitions(NextTrigger(Clock.systemDefaultZone()))
     private lateinit var store: AlarmStore
+    private lateinit var sensors: MissionSensors
+    private lateinit var alarmPlayer: AlarmPlayer
 
-    private var player: MediaPlayer? = null
     private var ownLock: PowerManager.WakeLock? = null
     private var ringing = false
     private var ringingAlarmId = -1L
+    private var info: RingInfo? = null
+    private var runner: MissionRunner? = null
+    private var missionDone = false
+    private var vibrates = false
+    private var ending = false
+    private val deferredStarts = mutableListOf<Long>()
+    private var lastStartId = 0
+
     private var originalAlarmVolume: Int? = null
+    private var targetAlarmVolume = 0
+    private var volumeObserver: ContentObserver? = null
+    private var rampFraction = 1f
+    private var ducked = false
     private var rampStartMs = 0L
     private var rampDurationMs = 0L
 
@@ -56,36 +75,51 @@ class RingingService : Service() {
 
     private val rampVolume = object : Runnable {
         override fun run() {
-            val current = player ?: return
-            val fraction = ((SystemClock.elapsedRealtime() - rampStartMs).toFloat() / rampDurationMs).coerceIn(MIN_RAMP, 1f)
-            current.setVolume(fraction, fraction)
-            if (fraction < 1f) handler.postDelayed(this, RAMP_STEP_MS)
+            rampFraction = ((SystemClock.elapsedRealtime() - rampStartMs).toFloat() / rampDurationMs).coerceIn(MIN_RAMP, 1f)
+            applyGain()
+            if (rampFraction < 1f) handler.postDelayed(this, RAMP_STEP_MS)
         }
     }
+
+    private val missionTick = object : Runnable {
+        override fun run() {
+            onMissionEvent()
+            handler.postDelayed(this, TICK_MS)
+        }
+    }
+
+    private val autoSilence = Runnable { onAutoSilence() }
+    private val finishMission = Runnable { if (ringing) complete() }
 
     override fun onCreate() {
         super.onCreate()
         store = AlarmStore.get(this)
+        sensors = MissionSensors(this, handler)
+        alarmPlayer = AlarmPlayer(this)
+        RingingController.actions = this
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        lastStartId = startId
         Log.i(TAG, "onStartCommand action=${intent?.action} flags=$flags startId=$startId ringing=$ringing")
         when (intent?.action) {
-            ACTION_STOP -> complete()
+            ACTION_STOP -> requestStop()
             ACTION_SNOOZE -> snooze()
             ACTION_REPOST -> if (ringing) enterForeground(currentAlarm())
             ACTION_START -> startRinging(intent.getLongExtra(Scheduler.EXTRA_ALARM_ID, -1L))
             null -> resumeAfterRestart()
         }
+        if (intent?.action in IDLE_STOPPABLE && !ringing && !ending) stopSelf(startId)
         return START_STICKY
     }
 
     override fun onDestroy() {
         Log.i(TAG, "onDestroy ringing=$ringing")
         releaseResources()
-        if (RingingController.state.value is RingingState.Ringing) RingingController.onIdle()
+        RingingController.actions = null
+        if (RingingController.state.value.liveAlarmId != null) RingingController.onIdle()
         super.onDestroy()
     }
 
@@ -93,30 +127,88 @@ class RingingService : Service() {
         store.state.value.alarms.firstOrNull { it.id == ringingAlarmId } ?: Alarm(id = ringingAlarmId)
 
     private fun startRinging(alarmId: Long) {
-        if (ringing) {
-            Log.i(TAG, "already ringing, ignoring start for alarm $alarmId")
+        if (ending) {
+            Log.i(TAG, "a ring is ending, deferring alarm $alarmId")
+            deferredStarts += alarmId
             WakeLockHolder.release()
             return
         }
+        if (ringing) {
+            if (alarmId != ringingAlarmId) {
+                Log.i(TAG, "alarm $ringingAlarmId rings, queueing alarm $alarmId")
+                persistFire(alarmId)
+            }
+            WakeLockHolder.release()
+            return
+        }
+        val active = store.state.value.activeRing
+        val target = if (active != null && active.alarmId != alarmId) active.alarmId else alarmId
+        if (target != alarmId) {
+            Log.i(TAG, "alarm $target still owns the ring, queueing alarm $alarmId")
+            persistFire(alarmId)
+        }
+        begin(target)
+    }
+
+    private fun begin(alarmId: Long) {
         ringingAlarmId = alarmId
         val alarm = currentAlarm()
+        val ringInfo = buildInfo(alarm)
+        info = ringInfo
         enterForeground(alarm)
         ownLock = getSystemService(PowerManager::class.java)
             .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "Chrona:ringing")
-            .apply { acquire(MAX_RING_MS) }
+            .apply { acquire(MAX_RING_MS + Duration.ofMinutes(1).toMillis()) }
         WakeLockHolder.release()
         applyAlarmVolume(alarm)
-        val soundOk = startSound(alarm)
-        if (alarm.vibrate || !soundOk) startVibration()
+        watchAlarmVolume()
+        runner = null
+        missionDone = false
+        ducked = false
+        prepareRamp(alarm)
+        val soundOk = alarmPlayer.start(alarm.soundUri, rampFraction)
+        if (soundOk) startRamp()
+        vibrates = alarm.vibrate
+        if (vibrates || !soundOk) startVibration()
         ringing = true
-        RingingController.onRinging(alarmId, Instant.now())
+        RingingController.publish(RingingState.Ringing(ringInfo))
         handler.post(rearmBackup)
+        scheduleAutoSilence(alarmId)
         persistFire(alarmId)
+    }
+
+    private fun buildInfo(alarm: Alarm): RingInfo {
+        val env = MissionEnvironment(
+            hasShakeSensor = sensors.hasShake,
+            hasStepSensor = sensors.hasSteps,
+            activityRecognitionGranted = SensorOverrides.fakeStepSensor ||
+                checkSelfPermission(Manifest.permission.ACTIVITY_RECOGNITION) == PackageManager.PERMISSION_GRANTED,
+        )
+        val resolved = MissionResolver.resolve(alarm.mission, env)
+        val now = Instant.now()
+        return RingInfo(
+            alarmId = alarm.id,
+            startedAt = store.state.value.activeRing?.takeIf { it.alarmId == alarm.id }?.startedAt ?: now,
+            label = alarm.label,
+            mission = resolved.mission,
+            fellBackToMath = resolved.fellBackToMath,
+            canSnooze = transitions.snoozed(store.state.value, alarm.id, now) != null,
+            snoozeMinutes = alarm.snooze.minutes,
+            snoozesLeft = (alarm.snooze.maxCount - alarm.snoozesUsed).coerceAtLeast(0),
+            snoozeMax = alarm.snooze.maxCount,
+        )
+    }
+
+    private fun scheduleAutoSilence(alarmId: Long) {
+        val now = Instant.now()
+        val started = store.state.value.activeRing?.takeIf { it.alarmId == alarmId }?.startedAt ?: now
+        val remaining = (RingingPolicy.AUTO_SILENCE - Duration.between(started, now)).toMillis()
+        handler.postDelayed(autoSilence, remaining.coerceIn(0L, MAX_RING_MS))
     }
 
     private fun persistFire(alarmId: Long) {
         val appContext = applicationContext
-        EngineScope.scope.launch {
+        EngineScope.serial.launch {
             val updated = store.update { transitions.fired(it, alarmId, Instant.now()) }
             updated.alarms.firstOrNull { it.id == alarmId }
                 ?.takeIf { it.enabled && !it.isOneShot }
@@ -136,17 +228,26 @@ class RingingService : Service() {
         startRinging(ring.alarmId)
     }
 
+    /** Stop is only honored when there is no mission or it is solved; the mission itself ends the ring. */
+    private fun requestStop() {
+        val current = info
+        if (!ringing || current == null) return
+        if (StopGate.allows(current.mission, missionDone)) {
+            complete()
+        } else {
+            Log.w(TAG, "stop refused: the mission is not solved")
+        }
+    }
+
     private fun complete() {
         Log.i(TAG, "stop requested")
         val alarmId = ringingAlarmId
         Scheduler.cancel(this, alarmId, TriggerKind.BACKUP)
-        finishRinging()
-        RingingController.onIdle()
-        EngineScope.scope.launch { store.update { transitions.completed(it, alarmId) } }
+        endRing(RingingState.Idle) { transitions.completed(it, alarmId) }
     }
 
     private fun snooze() {
-        if (!ringing) return
+        if (!ringing || ending) return
         val alarmId = ringingAlarmId
         val now = Instant.now()
         val result = transitions.snoozed(store.state.value, alarmId, now)
@@ -157,15 +258,58 @@ class RingingService : Service() {
         Log.i(TAG, "snoozed until ${result.snoozedUntil}")
         Scheduler.schedule(this, alarmId, TriggerKind.SNOOZE, result.snoozedUntil)
         Scheduler.cancel(this, alarmId, TriggerKind.BACKUP)
-        RingingController.onSnoozed(alarmId, result.snoozedUntil)
-        finishRinging()
-        EngineScope.scope.launch { store.update { transitions.snoozed(it, alarmId, now)?.data ?: it } }
+        endRing(RingingState.Snoozed(alarmId, result.snoozedUntil)) { transitions.snoozed(it, alarmId, now)?.data ?: it }
     }
 
-    private fun finishRinging() {
+    private fun onAutoSilence() {
+        if (!ringing || ending) return
+        val alarmId = ringingAlarmId
+        val now = Instant.now()
+        val outcome = transitions.autoSilenced(store.state.value, alarmId, now)
+        Scheduler.cancel(this, alarmId, TriggerKind.BACKUP)
+        when (outcome) {
+            is AutoSilence.Reschedule -> {
+                Log.i(TAG, "auto-silence: forced snooze until ${outcome.at}")
+                Scheduler.schedule(this, alarmId, TriggerKind.SNOOZE, outcome.at)
+                endRing(RingingState.Snoozed(alarmId, outcome.at)) { transitions.autoSilenced(it, alarmId, now).data }
+            }
+            is AutoSilence.Missed -> {
+                Log.i(TAG, "auto-silence: forced snoozes spent, alarm $alarmId is missed")
+                ReconcileExecutor.postMissed(this, currentAlarm())
+                endRing(RingingState.Idle) { transitions.autoSilenced(it, alarmId, now).data }
+            }
+        }
+    }
+
+    /**
+     * Ends the current ring: frees the hardware at once, persists the change in order, and only then
+     * decides what is next, so an alarm that fires in between cannot read a stale ring.
+     */
+    private fun endRing(state: RingingState, update: (StoreData) -> StoreData) {
+        ending = true
         releaseResources()
-        stopForeground(STOP_FOREGROUND_REMOVE)
-        stopSelf()
+        RingingController.publish(state)
+        EngineScope.serial.launch {
+            val updated = store.update(update)
+            handler.post {
+                ending = false
+                proceed(updated)
+            }
+        }
+    }
+
+    private fun proceed(updated: StoreData) {
+        val pending = deferredStarts.toList()
+        deferredStarts.clear()
+        val next = transitions.nextQueued(updated) ?: if (updated.activeRing == null) pending.firstOrNull() else null
+        pending.filter { it != next }.forEach(::persistFire)
+        if (next != null) {
+            Log.i(TAG, "next in line: alarm $next")
+            begin(next)
+        } else {
+            stopForeground(STOP_FOREGROUND_REMOVE)
+            stopSelf(lastStartId)
+        }
     }
 
     private fun enterForeground(alarm: Alarm) {
@@ -176,19 +320,14 @@ class RingingService : Service() {
                 enableVibration(false)
             },
         )
-        val open = PendingIntent.getActivity(
-            this,
-            0,
-            Intent(this, RingingActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
-        )
+        val open = openRingingIntent(0)
         val repost = PendingIntent.getService(
             this,
             1,
             Intent(this, RingingService::class.java).setAction(ACTION_REPOST),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
-        val notification = Notification.Builder(this, CHANNEL_ID)
+        val builder = Notification.Builder(this, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
             .setContentTitle(alarm.label.ifBlank { getString(R.string.ringing_title) })
             .setContentText(getString(R.string.ringing_text))
@@ -198,75 +337,92 @@ class RingingService : Service() {
             .setContentIntent(open)
             .setFullScreenIntent(open, true)
             .setDeleteIntent(repost)
-            .build()
-        startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SYSTEM_EXEMPTED)
+            .addAction(
+                Notification.Action.Builder(
+                    Icon.createWithResource(this, R.drawable.ic_bell),
+                    getString(R.string.notification_solve),
+                    openRingingIntent(2),
+                ).build(),
+            )
+        if (info?.canSnooze == true) {
+            builder.addAction(
+                Notification.Action.Builder(
+                    Icon.createWithResource(this, R.drawable.ic_moon),
+                    getString(R.string.notification_snooze),
+                    PendingIntent.getService(
+                        this,
+                        3,
+                        snoozeIntent(this),
+                        PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+                    ),
+                ).build(),
+            )
+        }
+        startForeground(NOTIFICATION_ID, builder.build(), ServiceInfo.FOREGROUND_SERVICE_TYPE_SYSTEM_EXEMPTED)
         Log.i(TAG, "foreground entered")
     }
+
+    private fun openRingingIntent(requestCode: Int) = PendingIntent.getActivity(
+        this,
+        requestCode,
+        Intent(this, RingingActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+        PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+    )
 
     private fun applyAlarmVolume(alarm: Alarm) {
         runCatching {
             val audio = getSystemService(AudioManager::class.java)
             val max = audio.getStreamMaxVolume(AudioManager.STREAM_ALARM)
             originalAlarmVolume = audio.getStreamVolume(AudioManager.STREAM_ALARM)
-            val target = (max * alarm.maxVolumePercent / 100f).roundToInt().coerceIn(1, max)
-            audio.setStreamVolume(AudioManager.STREAM_ALARM, target, 0)
-            Log.i(TAG, "alarm stream ${originalAlarmVolume} -> $target of $max")
+            targetAlarmVolume = (max * alarm.maxVolumePercent / 100f).roundToInt().coerceIn(1, max)
+            audio.setStreamVolume(AudioManager.STREAM_ALARM, targetAlarmVolume, 0)
+            Log.i(TAG, "alarm stream $originalAlarmVolume -> $targetAlarmVolume of $max")
         }.onFailure { Log.w(TAG, "could not set the alarm stream volume", it) }
     }
 
+    /** The volume panel must not lower an alarm that rings: put the level back when it changes (PLAN section 3). */
+    private fun watchAlarmVolume() {
+        val observer = object : ContentObserver(handler) {
+            override fun onChange(selfChange: Boolean) {
+                if (!ringing) return
+                val audio = getSystemService(AudioManager::class.java)
+                if (audio.getStreamVolume(AudioManager.STREAM_ALARM) != targetAlarmVolume) {
+                    Log.i(TAG, "alarm stream changed behind our back, restoring $targetAlarmVolume")
+                    audio.setStreamVolume(AudioManager.STREAM_ALARM, targetAlarmVolume, 0)
+                }
+            }
+        }
+        contentResolver.registerContentObserver(Settings.System.CONTENT_URI, true, observer)
+        volumeObserver = observer
+    }
+
     private fun restoreAlarmVolume() {
+        volumeObserver?.let { contentResolver.unregisterContentObserver(it) }
+        volumeObserver = null
         val original = originalAlarmVolume ?: return
         originalAlarmVolume = null
         runCatching { getSystemService(AudioManager::class.java).setStreamVolume(AudioManager.STREAM_ALARM, original, 0) }
     }
 
-    /** Chosen sound, then the bundled one; returns false when neither plays (vibration is the last resort). */
-    private fun startSound(alarm: Alarm): Boolean {
-        val sources = buildList<(MediaPlayer) -> Unit> {
-            alarm.soundUri?.let { uri -> add { it.setDataSource(this@RingingService, Uri.parse(uri)) } }
-            add { candidate ->
-                resources.openRawResourceFd(R.raw.alarm_default).use {
-                    candidate.setDataSource(it.fileDescriptor, it.startOffset, it.length)
-                }
-            }
+    private fun prepareRamp(alarm: Alarm) {
+        if (alarm.volumeRampSeconds <= 0) {
+            rampFraction = 1f
+            rampDurationMs = 0L
+        } else {
+            rampFraction = MIN_RAMP
+            rampDurationMs = Duration.ofSeconds(alarm.volumeRampSeconds.toLong()).toMillis()
         }
-        for ((index, source) in sources.withIndex()) {
-            val candidate = MediaPlayer()
-            try {
-                candidate.setAudioAttributes(
-                    AudioAttributes.Builder()
-                        .setUsage(AudioAttributes.USAGE_ALARM)
-                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                        .build(),
-                )
-                source(candidate)
-                candidate.isLooping = true
-                candidate.prepare()
-                player = candidate
-                startRamp(alarm)
-                candidate.start()
-                Log.i(TAG, "MediaPlayer started (source ${if (index == 0 && alarm.soundUri != null) "chosen" else "bundled"})")
-                return true
-            } catch (error: Exception) {
-                Log.w(TAG, "sound source $index failed", error)
-                player = null
-                candidate.release()
-            }
-        }
-        Log.e(TAG, "no sound could be played, falling back to vibration only")
-        return false
     }
 
-    private fun startRamp(alarm: Alarm) {
-        val current = player ?: return
-        if (alarm.volumeRampSeconds <= 0) {
-            current.setVolume(1f, 1f)
-            return
-        }
+    private fun startRamp() {
+        if (rampDurationMs <= 0L) return
         rampStartMs = SystemClock.elapsedRealtime()
-        rampDurationMs = Duration.ofSeconds(alarm.volumeRampSeconds.toLong()).toMillis()
-        current.setVolume(MIN_RAMP, MIN_RAMP)
         handler.postDelayed(rampVolume, RAMP_STEP_MS)
+    }
+
+    /** The ramp and the mission ducking both act on the player gain, never on the alarm stream. */
+    private fun applyGain() {
+        alarmPlayer.setGain(rampFraction * if (ducked) DUCK_GAIN else 1f)
     }
 
     private fun startVibration() {
@@ -276,12 +432,93 @@ class RingingService : Service() {
         )
     }
 
+    private fun stopVibration() {
+        getSystemService(VibratorManager::class.java).defaultVibrator.cancel()
+    }
+
+    override fun startMission() {
+        val current = info
+        if (!ringing || ending || runner != null || current == null || current.mission == Mission.None) return
+        val mission = MissionRunner(current.mission, SystemClock.elapsedRealtime())
+        runner = mission
+        ducked = true
+        applyGain()
+        if (mission.kind == MissionRunner.Kind.STEPS) stopVibration()
+        sensors.start(mission, ::onMissionEvent)
+        handler.postDelayed(missionTick, TICK_MS)
+        Log.i(TAG, "mission started: ${mission.kind}")
+        publishMission()
+    }
+
+    override fun submitMath(answer: Int) {
+        runner?.submitMath(answer, SystemClock.elapsedRealtime())
+        onMissionEvent()
+    }
+
+    override fun touch() {
+        runner?.touch(SystemClock.elapsedRealtime())
+    }
+
+    override fun switchToMath() {
+        val mission = runner ?: return
+        val wasSteps = mission.kind == MissionRunner.Kind.STEPS
+        mission.switchToMath(SystemClock.elapsedRealtime())
+        if (mission.kind != MissionRunner.Kind.MATH) return
+        sensors.stop()
+        if (wasSteps && vibrates) startVibration()
+        Log.i(TAG, "switched to math")
+        onMissionEvent()
+    }
+
+    override fun debugSteps(count: Int, intervalMs: Long) {
+        for (i in 0 until count) {
+            handler.postDelayed(
+                {
+                    runner?.onStep(SystemClock.elapsedRealtime())
+                    onMissionEvent()
+                },
+                DEBUG_TOKEN,
+                i * intervalMs,
+            )
+        }
+    }
+
+    private fun onMissionEvent() {
+        val mission = runner ?: return
+        val inactive = mission.tick(SystemClock.elapsedRealtime())
+        if (ducked == inactive) {
+            ducked = !inactive
+            applyGain()
+            Log.i(TAG, if (ducked) "mission volume ducked" else "no progress, full volume restored")
+        }
+        publishMission()
+        if (mission.done && !missionDone) {
+            missionDone = true
+            sensors.stop()
+            handler.postDelayed(finishMission, DONE_SHOW_MS)
+        }
+    }
+
+    private fun publishMission() {
+        val current = info ?: return
+        val mission = runner ?: return
+        RingingController.publish(RingingState.MissionActive(current, mission.view))
+    }
+
     private fun releaseResources() {
         handler.removeCallbacks(rearmBackup)
         handler.removeCallbacks(rampVolume)
-        player?.runCatching { stop(); release() }
-        player = null
-        getSystemService(VibratorManager::class.java).defaultVibrator.cancel()
+        handler.removeCallbacks(missionTick)
+        handler.removeCallbacks(autoSilence)
+        handler.removeCallbacks(finishMission)
+        handler.removeCallbacksAndMessages(DEBUG_TOKEN)
+        sensors.stop()
+        runner = null
+        info = null
+        missionDone = false
+        ducked = false
+        alarmPlayer.release()
+        stopVibration()
         ownLock?.takeIf { it.isHeld }?.release()
         ownLock = null
         WakeLockHolder.release()
@@ -295,14 +532,19 @@ class RingingService : Service() {
         const val ACTION_STOP = "com.nutabe.chrona.action.STOP_RING"
         const val ACTION_SNOOZE = "com.nutabe.chrona.action.SNOOZE_RING"
         private const val ACTION_REPOST = "com.nutabe.chrona.action.REPOST_NOTIFICATION"
+        private val IDLE_STOPPABLE = setOf(ACTION_STOP, ACTION_SNOOZE, ACTION_REPOST)
 
         private const val CHANNEL_ID = "ringing"
         private const val NOTIFICATION_ID = 1
         private const val MIN_RAMP = 0.1f
+        private const val DUCK_GAIN = 0.2f
         private const val RAMP_STEP_MS = 500L
+        private const val TICK_MS = 1_000L
+        private const val DONE_SHOW_MS = 800L
         private const val BACKUP_REARM_MS = 20_000L
         private val BACKUP_AHEAD: Duration = Duration.ofSeconds(60)
         private val MAX_RING_MS = RingingPolicy.AUTO_SILENCE.toMillis()
+        private val DEBUG_TOKEN = Any()
 
         fun startIntent(context: Context, alarmId: Long): Intent =
             Intent(context, RingingService::class.java)

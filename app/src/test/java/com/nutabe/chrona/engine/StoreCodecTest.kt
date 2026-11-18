@@ -97,4 +97,16 @@ class StoreCodecTest {
     fun emptyFileIsReportedAsCorrupt() {
         assertTrue(StoreCodec.decode("") is StoreCodec.DecodeResult.Corrupt)
     }
+
+    @Test
+    fun aFileWithoutTheRingQueueDecodesWithAnEmptyOne() {
+        val old = """{"schemaVersion":1,"alarms":[],"activeRing":null,"settings":{"onboardingDone":true},"nextAlarmId":3}"""
+        assertEquals(emptyList<Long>(), decodeOk(old).ringQueue)
+    }
+
+    @Test
+    fun theRingQueueRoundTrips() {
+        val data = StoreData(alarms = listOf(Alarm(id = 1), Alarm(id = 2)), ringQueue = listOf(2L, 1L))
+        assertEquals(listOf(2L, 1L), decodeOk(StoreCodec.encode(data)).ringQueue)
+    }
 }

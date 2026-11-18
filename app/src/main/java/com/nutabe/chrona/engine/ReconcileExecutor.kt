@@ -23,7 +23,7 @@ object ReconcileExecutor {
 
     suspend fun run(context: Context, recomputeRepeating: Boolean = false) {
         val store = AlarmStore.get(context)
-        val live = (RingingController.state.value as? RingingState.Ringing)?.alarmId
+        val live = RingingController.state.value.liveAlarmId
         val actions = Reconciler(NextTrigger(Clock.systemDefaultZone()))
             .reconcile(store.state.value, Instant.now(), live, recomputeRepeating)
         Log.i(TAG, "reconcile: ${actions.size} actions $actions")
@@ -51,7 +51,7 @@ object ReconcileExecutor {
         }
     }
 
-    private fun postMissed(context: Context, alarm: Alarm?) {
+    fun postMissed(context: Context, alarm: Alarm?) {
         val manager = context.getSystemService(NotificationManager::class.java)
         manager.createNotificationChannel(
             NotificationChannel(

@@ -185,4 +185,12 @@ class ReconcilerTest {
             reconciler.reconcile(store(first, second), now),
         )
     }
+
+    @Test
+    fun aRingInItsForcedSnoozeGapIsScheduledNotRungImmediately() {
+        val until = now + Duration.ofSeconds(40)
+        val alarm = Alarm(id = 1, repeatDays = emptySet(), snoozedUntil = until)
+        val actions = reconciler.reconcile(store(alarm, activeRing = ActiveRing(1, until, 1)), now)
+        assertEquals(listOf<ReconcileAction>(Schedule(1, TriggerKind.SNOOZE, until)), actions)
+    }
 }

@@ -25,7 +25,7 @@ sealed interface AlarmOutcome {
 /** Pure alarm mutations: the new state plus the scheduling effects it implies. */
 class AlarmOps(private val nextTrigger: NextTrigger) {
     fun isLocked(data: StoreData, alarm: Alarm): Boolean =
-        data.activeRing?.alarmId == alarm.id || alarm.snoozedUntil != null
+        data.isRingBusy(alarm.id) || alarm.snoozedUntil != null
 
     /** Creates the alarm when `draft.id` is 0, otherwise edits it. */
     fun save(data: StoreData, draft: Alarm, now: Instant): AlarmOutcome {

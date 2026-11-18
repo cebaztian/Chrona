@@ -59,7 +59,7 @@ fun alarmListState(data: StoreData, now: Instant, zone: ZoneId = ZoneId.systemDe
         .sortedWith(compareBy<Alarm>({ it.hour }, { it.minute }, { it.id }))
         .map { alarm ->
             val lock = when {
-                data.activeRing?.alarmId == alarm.id -> LockReason.RINGING
+                data.isRingBusy(alarm.id) -> LockReason.RINGING
                 alarm.snoozedUntil != null -> LockReason.SNOOZED
                 else -> null
             }

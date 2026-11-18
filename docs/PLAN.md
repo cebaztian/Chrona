@@ -436,6 +436,25 @@ Android release notes then.
 - An alarm overdue by 15 min or more at boot becomes a "Missed alarm" notification and is disabled;
   an active ring or a due snooze rings again however long ago.
 
+**Observed in M3 (same emulator, 2026-11-17):**
+- The emulator has a `Linear Acceleration Sensor` (virtual) next to the accelerometer, so the shake mission
+  registers it directly; the gravity-filter fallback is covered only by unit tests. A slow tilt through
+  `adb emu sensor set acceleration` does not count at any sensitivity, strong bursts do.
+- Changing the emulated acceleration also rotates the screen; a rotated ringing screen cut off its buttons,
+  so `RingingActivity` is locked to portrait. A phone tilted on a nightstand can do the same.
+- Ducking acts on the `MediaPlayer` gain. The stream observer (a `ContentObserver` on `Settings.System`)
+  restored `STREAM_ALARM` when it was lowered from outside; hardware volume keys are consumed by the activity.
+- Notification actions: the swipe-away of the foreground notification is answered by its delete intent
+  (repost); there is no Dismiss. `RingingService` is not exported, so `am startservice` of a stop intent is refused.
+- A second alarm firing while one rings is stored in `StoreData.ringQueue` and rings after the first ends;
+  the queue survived a package reinstall. During a forced-snooze gap the first alarm still owns the ring.
+- Auto-silence: a ring left alone went 15 min, a 1 min gap, 15 min, a gap, 15 min, a gap and a final 15 min
+  ring (about 63 min), then "Missed alarm" and a disabled one-shot, with `forcedSnoozeCycles` 1, 2 and 3.
+- A reboot while ringing resumes the ring over the keyguard (`RING_NOW`); the mission is still required and
+  solving it on the locked device ended the ring with the keyguard still showing.
+- With the device locked after a reboot, `/sdcard` is not available to `uiautomator dump`; dump to
+  `/data/local/tmp` instead.
+
 **Still to confirm in DV or M2 (not reachable on the emulator):**
 - `USE_EXACT_ALARM` is auto-granted but restricted by Play policy to alarm, clock and calendar apps,
   which Chrona is. `SCHEDULE_EXACT_ALARM` is user-revocable and denied by default for new installs

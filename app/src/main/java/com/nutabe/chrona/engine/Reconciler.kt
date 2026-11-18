@@ -12,6 +12,12 @@ object RingingPolicy {
 
     /** "Ring now" goes through `setAlarmClock` this far ahead so the normal receiver path runs. */
     val RING_NOW_DELAY: Duration = Duration.ofSeconds(3)
+
+    /** Forced snoozes the auto-silence may chain before the alarm is reported as missed (ADR-015). */
+    const val MAX_FORCED_CYCLES = 3
+
+    /** Quiet gap between a forced snooze and the next ring. */
+    val FORCED_SNOOZE_GAP: Duration = Duration.ofMinutes(1)
 }
 
 sealed interface ReconcileAction {
@@ -44,7 +50,7 @@ class Reconciler(private val nextTrigger: NextTrigger) {
         val actions = mutableListOf<ReconcileAction>()
         for (alarm in data.alarms) {
             when {
-                data.activeRing?.alarmId == alarm.id -> {
+                data.activeRing?.alarmId == alarm.id && !inForcedSnooze(alarm, now) -> {
                     if (alarm.id != liveRingAlarmId) actions += ringNow(alarm, now)
                     if (alarm.enabled && !alarm.isOneShot) actions += nextOccurrence(alarm, now, recomputeRepeating)
                 }
@@ -75,6 +81,8 @@ class Reconciler(private val nextTrigger: NextTrigger) {
             listOf(missed, ReconcileAction.Schedule(alarm.id, TriggerKind.NEXT, nextTrigger.next(alarm, now)))
         }
     }
+
+    private fun inForcedSnooze(alarm: Alarm, now: Instant) = alarm.snoozedUntil?.let { it > now } == true
 
     private fun ringNow(alarm: Alarm, now: Instant) =
         ReconcileAction.Schedule(alarm.id, TriggerKind.RING_NOW, now + RingingPolicy.RING_NOW_DELAY)

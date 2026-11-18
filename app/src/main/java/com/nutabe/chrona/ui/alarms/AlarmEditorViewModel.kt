@@ -48,7 +48,7 @@ class AlarmEditorViewModel(
 
     private val locked = original?.let {
         val data = repository.data.value
-        data.activeRing?.alarmId == it.id || it.snoozedUntil != null
+        data.isRingBusy(it.id) || it.snoozedUntil != null
     } ?: false
 
     val state: StateFlow<AlarmEditorState> = combine(draft, ticker()) { current, now ->
