@@ -6,22 +6,22 @@ resumes from this file. Answer the "Waiting for you" items here or in the sessio
 ## Now
 - **M4 done and approved (unattended) 2026-11-17. The loop stopped:** what is left is DV (Device validation),
   which needs the S25 Ultra and you. `docs/DV-CHECKLIST.md` is written for both options (adb or a hand-installed
-  APK). Local commits only: `origin/main` is at `946ef02`; later commits are not on GitHub.
+  APK). Pushed to `origin/main` on the user's request ("sync docs and repos", 2026-11-17).
 - The emulator `Chrona_API37` has the signed release build installed (`com.nutabe.chrona`) with test alarms.
-- Last update: 2026-11-17 21:30
+- Last update: 2026-11-17 21:50
 
 ## Milestones
 | Milestone | State | Checkpoint | Commit |
 |---|---|---|---|
-| M0 | done | auto-passed (unattended), 2026-11-17 | `1455276` "scaffold Chrona project" (local, not pushed) |
+| M0 | done | auto-passed (unattended), 2026-11-17 | `1455276` "scaffold Chrona project" |
 | D1 | done | approved by the user 2026-11-17 | included in the M0 commit (no git existed before) |
-| D2 | done | approved by the user 2026-11-17 | `aaedeff` "add screen designs" (local, not pushed) |
-| M1a | done | approved by the user 2026-11-17 | `2b1b521` "add ringing path skeleton" (local, not pushed) |
-| M1b | done | approved (unattended), 2026-11-17 | `0a3ca70` "add alarm store, scheduler and reconciliation" (local, not pushed) |
-| M1c | done | approved (unattended), 2026-11-17 | `ed0ff0b` "verify engine reliability" (local, not pushed) |
-| M2 | done | approved (unattended), 2026-11-17 | `3b60aa9` "add alarm list, editor, settings and health screen" (local, not pushed) |
-| M3 | done | approved (unattended), 2026-11-17 | `8fc9608` "add ringing screen and missions" (local, not pushed) |
-| M4 | done | approved (unattended), 2026-11-17 | `3a3e582` "prepare release build" (local, not pushed) |
+| D2 | done | approved by the user 2026-11-17 | `aaedeff` "add screen designs" |
+| M1a | done | approved by the user 2026-11-17 | `2b1b521` "add ringing path skeleton" |
+| M1b | done | approved (unattended), 2026-11-17 | `0a3ca70` "add alarm store, scheduler and reconciliation" |
+| M1c | done | approved (unattended), 2026-11-17 | `ed0ff0b` "verify engine reliability" |
+| M2 | done | approved (unattended), 2026-11-17 | `3b60aa9` "add alarm list, editor, settings and health screen" |
+| M3 | done | approved (unattended), 2026-11-17 | `8fc9608` "add ringing screen and missions" |
+| M4 | done | approved (unattended), 2026-11-17 | `3a3e582` "prepare release build" |
 | DV | agent task 1 done (`docs/DV-CHECKLIST.md`, covers both options); the rest needs you | | |
 
 ## Tasks (last completed milestone: M0)
