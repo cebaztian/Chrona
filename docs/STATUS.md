@@ -21,7 +21,7 @@ resumes from this file. Answer the "Waiting for you" items here or in the sessio
 | M1c | done | approved (unattended), 2026-11-17 | `ed0ff0b` "verify engine reliability" (local, not pushed) |
 | M2 | done | approved (unattended), 2026-11-17 | `3b60aa9` "add alarm list, editor, settings and health screen" (local, not pushed) |
 | M3 | done | approved (unattended), 2026-11-17 | `8fc9608` "add ringing screen and missions" (local, not pushed) |
-| M4 | done | approved (unattended), 2026-11-17 | HASH_M4 "prepare release build" (local, not pushed) |
+| M4 | done | approved (unattended), 2026-11-17 | `3a3e582` "prepare release build" (local, not pushed) |
 | DV | todo (your decision at the start: S25 over adb, or a hand-installed APK) | | |
 
 ## Tasks (last completed milestone: M0)
@@ -823,6 +823,7 @@ No screen has a brown background, white text on orange, or more than one orange-
   (`.signing/`) - Verified: see "M4" in Checkpoints.
 - 2026-11-17 21:16 DECIDED M4 checkpoint - approved (unattended): no ADR change; the keystore backup, recreating
   the alarms and the icon review are [user] items in "Waiting for you".
+- 2026-11-17 21:20 COMMIT M4 - `3a3e582` "prepare release build" (local only), with the milestone-loop skill update the user asked for.
 - 2026-11-17 DONE checkpoint D1 — approved by the user (screens fine; Stitch web canvas renders them partially). M1b's D1 gate is met.
 - 2026-11-17 START D2/1 — variants of alarm list and ringing screen, both vibe archetypes (interactive session)
 - 2026-11-17 FINDING D2/1 — Stitch timed out on 6 of 9 generation calls; saved variants/list-A1, list-A2 (Editorial) and ringing-B1 (Ethereal, rendered as desktop). list-B and ringing-A may exist only in the Stitch web UI. Waiting for the user to check the web UI and pick a direction.
