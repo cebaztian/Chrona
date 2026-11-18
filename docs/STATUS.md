@@ -49,7 +49,7 @@ D1 tasks (done earlier): Stitch project and design system, the 11 screens, expor
   (ring screen, "Start mission", a wrong answer, two problems; the shake and steps screens were checked by
   screenshots). Also on the S25: the steps mission with real walking and the screen off (ADR-014, the step spike),
   the shake feel at each sensitivity, and the haptic on a wrong answer.
-- [ ] **Back up the release keystore privately NOW** (needed for: every future update): copy
+- [x] **Back up the release keystore privately** (confirmed by the user, 2026-11-17) (needed for: every future update): copy
   `C:/projects/Chrona/.signing/chrona-release.jks` and the passwords in `C:/projects/Chrona/keystore.properties`
   to a private place that is not this repo (a password manager plus an encrypted drive). Both are git-ignored. A
   sideloaded app can only be updated with the same key; if it is lost, the app must be uninstalled to change keys.
