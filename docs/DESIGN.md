@@ -250,6 +250,17 @@ error color *and* an icon (rule 5).
 - No decorative motion on the ringing screen; the only motion there is mission progress.
 - Respect the system's "Remove animations" setting.
 
+### Haptics and list actions
+
+- Every tappable goes through `hapticClickable` (Compose's `clickable` is silent): `ContextClick` for taps,
+  `Confirm` for pill CTAs, FAB and the numpad confirm key, `VirtualKey` for numpad digits, `ToggleOn`/`ToggleOff`
+  for switches and weekday chips, `SegmentFrequentTick` for the time picker and the volume slider, `Reject` for a
+  wrong math answer, `LongPress` for a long press. They follow the system's touch-feedback setting.
+- Alarm list: a long press on an unlocked alarm opens a menu (Duplicate, Select, Delete). Duplicate opens the
+  editor on a copy that is a new alarm until saved. Select starts multi-select: the top bar shows the count, close and
+  delete, taps toggle the check marks, system back exits, and one Undo restores every deleted alarm. Ringing and
+  snoozed alarms are never selectable (ADR-016).
+
 ## 8. Launcher icon
 
 An adaptive icon: Main background, Accent glyph (a minimal clock or sunrise mark). It includes a

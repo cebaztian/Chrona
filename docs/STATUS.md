@@ -6,9 +6,9 @@ resumes from this file. Answer the "Waiting for you" items here or in the sessio
 ## Now
 - **M4 done and approved (unattended) 2026-11-17. The loop stopped:** what is left is DV (Device validation),
   which needs the S25 Ultra and you. `docs/DV-CHECKLIST.md` is written for both options (adb or a hand-installed
-  APK). Pushed to `origin/main` on the user's request ("sync docs and repos", 2026-11-17).
+  APK). Pushed to `origin/main` on the user's request ("sync docs and repos", 2026-11-17 and 2026-11-18).
 - The emulator `Chrona_API37` has the signed release build installed (`com.nutabe.chrona`) with test alarms.
-- Last update: 2026-11-17 21:50
+- Last update: 2026-11-18 00:10
 
 ## Milestones
 | Milestone | State | Checkpoint | Commit |

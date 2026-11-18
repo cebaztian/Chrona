@@ -91,6 +91,9 @@ The question: do steps keep counting inside the service with the screen off and 
 - Do Not Disturb with "Alarms" allowed: it must ring. DND with alarms off: note what happens.
 - Alarm volume at the minimum: the alarm raises it to its level and restores it after.
 - The launcher icon (and the themed icon with a monochrome layer): is it acceptable? This is your call.
+- Haptics (DESIGN section 7): the time picker, Save, weekday chips, switches, numpad and the long press all vibrate
+  at a level you can feel on One UI; say which ones are too faint or too strong.
+- Alarm list long press: Duplicate, Select and Delete work; select three alarms, delete them and Undo restores all.
 
 ## Results
 
