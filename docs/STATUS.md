@@ -53,11 +53,10 @@ D1 tasks (done earlier): Stitch project and design system, the 11 screens, expor
   `C:/projects/Chrona/.signing/chrona-release.jks` and the passwords in `C:/projects/Chrona/keystore.properties`
   to a private place that is not this repo (a password manager plus an encrypted drive). Both are git-ignored. A
   sideloaded app can only be updated with the same key; if it is lost, the app must be uninstalled to change keys.
-- [ ] **Install the release APK and recreate your alarms** (M4 task 5; there is no export):
-  `app/build/outputs/apk/release/app-release.apk` (`./gradlew assembleRelease`), application ID
+- [ ] **Install the release APK and recreate your alarms** (M4 task 5; there is no export). The user installs it
+  by hand (DV option b): `C:/projects/Chrona/app/build/outputs/apk/release/app-release.apk` (`./gradlew assembleRelease`), application ID
   `com.nutabe.chrona`; the debug build is `com.nutabe.chrona.debug`, so both can coexist.
-- [ ] **Review the launcher icon** (a dark circle with the Phosphor alarm glyph in Accent, plus a monochrome layer
-  for themed icons): it was built only from the approved palette and glyph, not as a final brand choice.
+- [x] **Review the launcher icon:** approved by the user for now (2026-11-17), not as a final brand choice.
 - [ ] **DV items collected so far (S25 Ultra or a hand-installed APK; never simulated):** run the step
   spike (grant Physical activity on the debug screen, "Step spike: start", lock the screen, walk,
   `logcat -s ChronaStepSpike`); check restart after a Recents swipe and under One UI's killers; deep
