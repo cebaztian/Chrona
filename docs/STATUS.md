@@ -4,11 +4,11 @@ Maintained by the `milestone-loop` skill (`.claude/skills/milestone-loop/SKILL.m
 resumes from this file. Answer the "Waiting for you" items here or in the session.
 
 ## Now
-- **M4 done and approved (unattended) 2026-11-17.** Next: DV - Device validation, which needs you (the S25 Ultra
-  or a hand-installed APK); the loop has no agent task left that does not depend on it. Local commits only:
-  `origin/main` is at `946ef02`; later commits are not on GitHub.
+- **M4 done and approved (unattended) 2026-11-17. The loop stopped:** what is left is DV (Device validation),
+  which needs the S25 Ultra and you. `docs/DV-CHECKLIST.md` is written for both options (adb or a hand-installed
+  APK). Local commits only: `origin/main` is at `946ef02`; later commits are not on GitHub.
 - The emulator `Chrona_API37` has the signed release build installed (`com.nutabe.chrona`) with test alarms.
-- Last update: 2026-11-17 21:15
+- Last update: 2026-11-17 21:30
 
 ## Milestones
 | Milestone | State | Checkpoint | Commit |
@@ -22,7 +22,7 @@ resumes from this file. Answer the "Waiting for you" items here or in the sessio
 | M2 | done | approved (unattended), 2026-11-17 | `3b60aa9` "add alarm list, editor, settings and health screen" (local, not pushed) |
 | M3 | done | approved (unattended), 2026-11-17 | `8fc9608` "add ringing screen and missions" (local, not pushed) |
 | M4 | done | approved (unattended), 2026-11-17 | `3a3e582` "prepare release build" (local, not pushed) |
-| DV | todo (your decision at the start: S25 over adb, or a hand-installed APK) | | |
+| DV | agent task 1 done (`docs/DV-CHECKLIST.md`, covers both options); the rest needs you | | |
 
 ## Tasks (last completed milestone: M0)
 - [x] 1. SDK, system image and AVD `Chrona_API37`: done
@@ -824,6 +824,10 @@ No screen has a brown background, white text on orange, or more than one orange-
 - 2026-11-17 21:16 DECIDED M4 checkpoint - approved (unattended): no ADR change; the keystore backup, recreating
   the alarms and the icon review are [user] items in "Waiting for you".
 - 2026-11-17 21:20 COMMIT M4 - `3a3e582` "prepare release build" (local only), with the milestone-loop skill update the user asked for.
+- 2026-11-17 21:28 DONE DV/1 - Files: docs/DV-CHECKLIST.md (both options in one list, the incident-log template
+  for the dogfood week) - Verified: re-read against MILESTONES DV and the DV items collected in "Waiting for you".
+- 2026-11-17 21:30 STOP - no agent task is left that does not depend on a [user] step: DV needs the S25 Ultra, the
+  keystore backup and your alarms (see "Waiting for you").
 - 2026-11-17 DONE checkpoint D1 — approved by the user (screens fine; Stitch web canvas renders them partially). M1b's D1 gate is met.
 - 2026-11-17 START D2/1 — variants of alarm list and ringing screen, both vibe archetypes (interactive session)
 - 2026-11-17 FINDING D2/1 — Stitch timed out on 6 of 9 generation calls; saved variants/list-A1, list-A2 (Editorial) and ringing-B1 (Ethereal, rendered as desktop). list-B and ringing-A may exist only in the Stitch web UI. Waiting for the user to check the web UI and pick a direction.
