@@ -26,6 +26,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.nutabe.chrona.R
 import com.nutabe.chrona.ui.components.ChronaIcon
 import com.nutabe.chrona.ui.components.ChronaSwitch
@@ -146,7 +147,13 @@ fun TimeDialog(hour: Int, minute: Int, onConfirm: (hour: Int, minute: Int) -> Un
         containerColor = MaterialTheme.colorScheme.surfaceContainer,
         confirmButton = { DialogAction(stringResource(R.string.editor_ok), "time-ok") { onConfirm(state.hour, state.minute) } },
         dismissButton = { DialogAction(stringResource(R.string.editor_cancel), "time-cancel", onDismiss) },
-        text = { TimePicker(state) },
+        text = {
+            // The picker draws its hour and minute boxes in displayLarge (88 sp), which does not fit them.
+            val typography = MaterialTheme.typography
+            MaterialTheme(typography = typography.copy(displayLarge = typography.displayLarge.copy(fontSize = 52.sp))) {
+                TimePicker(state)
+            }
+        },
     )
 }
 

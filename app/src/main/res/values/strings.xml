@@ -216,4 +216,5 @@
     <string name="preview_sound_off">Sound off</string>
     <string name="preview_close">Close preview</string>
     <string name="preview_done">Mission complete</string>
+    <string name="mission_progress_description">%1$d of %2$d</string>
 </resources>

@@ -15,6 +15,7 @@ captures/
 .cxx/
 
 # Signing
+.signing/
 *.jks
 *.keystore
 keystore.properties

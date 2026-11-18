@@ -4,10 +4,11 @@ Maintained by the `milestone-loop` skill (`.claude/skills/milestone-loop/SKILL.m
 resumes from this file. Answer the "Waiting for you" items here or in the session.
 
 ## Now
-- **M3 done and approved (unattended) 2026-11-17.** Next: M4 - Hardening and release. Local commits only:
-  `origin/main` is at `946ef02`; `aaedeff`, the M2 and M3 commits are not on GitHub.
-- The emulator `Chrona_API37` is running with the debug build; its store holds only test alarms. PIN `1234`.
-- Last update: 2026-11-17 20:40
+- **M4 done and approved (unattended) 2026-11-17.** Next: DV - Device validation, which needs you (the S25 Ultra
+  or a hand-installed APK); the loop has no agent task left that does not depend on it. Local commits only:
+  `origin/main` is at `946ef02`; later commits are not on GitHub.
+- The emulator `Chrona_API37` has the signed release build installed (`com.nutabe.chrona`) with test alarms.
+- Last update: 2026-11-17 21:15
 
 ## Milestones
 | Milestone | State | Checkpoint | Commit |
@@ -20,7 +21,7 @@ resumes from this file. Answer the "Waiting for you" items here or in the sessio
 | M1c | done | approved (unattended), 2026-11-17 | `ed0ff0b` "verify engine reliability" (local, not pushed) |
 | M2 | done | approved (unattended), 2026-11-17 | `3b60aa9` "add alarm list, editor, settings and health screen" (local, not pushed) |
 | M3 | done | approved (unattended), 2026-11-17 | `8fc9608` "add ringing screen and missions" (local, not pushed) |
-| M4 | todo | | |
+| M4 | done | approved (unattended), 2026-11-17 | HASH_M4 "prepare release build" (local, not pushed) |
 | DV | todo (your decision at the start: S25 over adb, or a hand-installed APK) | | |
 
 ## Tasks (last completed milestone: M0)
@@ -48,12 +49,54 @@ D1 tasks (done earlier): Stitch project and design system, the 11 screens, expor
   (ring screen, "Start mission", a wrong answer, two problems; the shake and steps screens were checked by
   screenshots). Also on the S25: the steps mission with real walking and the screen off (ADR-014, the step spike),
   the shake feel at each sensitivity, and the haptic on a wrong answer.
+- [ ] **Back up the release keystore privately NOW** (needed for: every future update): copy
+  `C:/projects/Chrona/.signing/chrona-release.jks` and the passwords in `C:/projects/Chrona/keystore.properties`
+  to a private place that is not this repo (a password manager plus an encrypted drive). Both are git-ignored. A
+  sideloaded app can only be updated with the same key; if it is lost, the app must be uninstalled to change keys.
+- [ ] **Install the release APK and recreate your alarms** (M4 task 5; there is no export):
+  `app/build/outputs/apk/release/app-release.apk` (`./gradlew assembleRelease`), application ID
+  `com.nutabe.chrona`; the debug build is `com.nutabe.chrona.debug`, so both can coexist.
+- [ ] **Review the launcher icon** (a dark circle with the Phosphor alarm glyph in Accent, plus a monochrome layer
+  for themed icons): it was built only from the approved palette and glyph, not as a final brand choice.
 - [ ] **DV items collected so far (S25 Ultra or a hand-installed APK; never simulated):** run the step
   spike (grant Physical activity on the debug screen, "Step spike: start", lock the screen, walk,
   `logcat -s ChronaStepSpike`); check restart after a Recents swipe and under One UI's killers; deep
   Doze; `canUseFullScreenIntent()` on a fresh sideload; the One UI battery settings (PLAN §4).
 
 ## Checkpoints
+
+### M4 - Hardening and release (approved unattended, 2026-11-17)
+
+`./gradlew assembleRelease check` -> BUILD SUCCESSFUL (173 unit tests, `lintDebug`, `checkNoInternetPermission`);
+`connectedDebugAndroidTest` -> 35 tests, 0 failures. The release APK (3.3 MB) is minified and resource-shrunk by
+R8, signed with the Chrona key (`apksigner verify`: v2), and no keep rules were needed.
+
+| Check on the release build (emulator `Chrona_API37`) | Result |
+|---|---|
+| Fonts, icons and theme after R8 and resource shrinking | Pass: onboarding, list, editor, mission sheet, settings and health render as in debug |
+| R8: every `Mission` subtype read back after a relaunch | Pass for `None`, `Math` and `Shake` (saved through the UI, force-stopped, relaunched); `Steps` cannot be created on the emulator (no step sensor) and is covered by the unit codec test |
+| R8: `toRoute()` routes | Pass: the editor with an id, the onboarding route and settings |
+| R8: a direct-boot decode | Pass: reboot while ringing, `LOCKED_BOOT_COMPLETED` reconciled the store and the ring resumed over the keyguard; the mission was solved on the locked device |
+| UI alarm creation (time picker) | Pass, and it found a bug (see below) |
+| Rings, notification actions, mission | Pass: math and shake missions complete; the notification shows "Solve to stop" and "Snooze" |
+| M3 no-bypass: Back, Home, Recents | Pass |
+| M1c row 1 (process gone before the alarm) | Pass with `am kill`: the pending alarm survived and rang |
+| M1c row 8 (reboot mid-ring), 3 (reboot locked) | Pass |
+| M1c row 13 (notification swiped) | Pass: re-posted |
+| M1c row 16 (`adb install -r` with an alarm pending) | Pass: `MY_PACKAGE_REPLACED` rescheduled it |
+| Second alarm, snooze | Pass: two alarms at 07:00, the second queued; snooze let it ring next and the snoozed alarm fired again |
+| Calls (`gsm call` / `cancel`) | Pass: alarm paused with a soft tone, resumed after hang-up. Also on debug: a call accepted mid-ring and an alarm that fires during a call (focus request denied, rings softly) |
+| Exempt rows (6 invalid sound, 7 process kill, sensor watchdog) | Debug only, as MILESTONES says |
+| Not repeated on release | Auto-silence through 3 cycles (63 min, same code; `ActiveRing` serialization is proven by the reboot resume), M1c rows 9-12, 14, 15, 17 and the sound-level observer (needs a debug hook): carried over from the debug runs, and R8-neutral. DV covers real hardware |
+
+Bug found and fixed in M4: the time picker's hour and minute boxes clipped their digits because the picker draws
+them in `displayLarge` (88 sp). It is now scoped to 52 sp. This closes M2's "time picker never hand-exercised" gap.
+
+Also in M4: audio focus and call handling (`CallPolicy`), the adaptive launcher icon with a monochrome layer,
+accessibility labels on the mission progress, a ES/EN string audit (no missing keys, matching placeholders),
+release signing (a keystore in the git-ignored `.signing/`, read from `keystore.properties`, conditional so a
+clone still builds) and R8. The skill update `.claude/skills/milestone-loop/SKILL.md` is in this commit, as the
+user asked.
 
 ### M3 - Ringing screen and missions (approved unattended, 2026-11-17)
 
@@ -747,6 +790,39 @@ No screen has a brown background, white text on orange, or more than one orange-
 - 2026-11-17 20:42 DECIDED M3 checkpoint - approved (unattended): ADR changes none (ADR-014 stays *Proposed*
   until DV, per the user); the known gaps above go to DV or later.
 - 2026-11-17 20:50 COMMIT M3 - `8fc9608` "add ringing screen and missions" (local only).
+- 2026-11-17 20:45 START M4 - hardening and release; blocks: (A) audio focus and calls, (B) polish (strings,
+  adaptive icon, accessibility labels), (C) release signing and R8, (D) verification on the release APK.
+- 2026-11-17 20:46 DECIDED M4 keystore location - chose `C:/projects/Chrona/.signing/` (git-ignored, with
+  `keystore.properties`) over a path outside the project (advisor): the hard limit forbids touching anything
+  outside the project, and what MILESTONES means by "outside the repo" is that the key is never committed.
+  The password is generated with Python `secrets` and never printed; the DN is generic (`CN=Chrona`); the
+  signing config is conditional on the file existing so a clone without it still builds. The backup is a [user]
+  item in "Waiting for you".
+- 2026-11-17 20:47 DECIDED M4 release verification (advisor) - attempt every M1c and M3 row on the release APK
+  except the documented exemptions, mark each pass or "not reproducible on release because X"; alarms are
+  created through the UI (the time picker keyboard first); the new checks are the R8 ones (every `Mission`
+  subtype read back after a relaunch, `toRoute()` routes, a locked reboot decode). Keep rules are added only
+  after an observed failure. M4 task 5 (recreating the user's alarms) is the user's.
+- 2026-11-17 20:48 CORRECTION M3 - the entry "DECIDED M3 ADR-014" above says the adapters sit behind a
+  `StepSource` interface; no such interface exists. The real seam is `MissionSensors` (registers the step
+  detector, or the step counter as the fallback, and feeds `MissionRunner.onStep` / `onStepCounter`) plus the
+  debug-only `SensorOverrides`. Applying the ADR-014 fallback (count only while `RingingActivity` is visible)
+  means starting and stopping `MissionSensors` from the activity instead of the service.
+- 2026-11-17 20:52 NOTE - the user asked (mid-turn) that the next commit include the update to `.claude/skills/milestone-loop/SKILL.md` (the unattended decision policy); it goes into the M4 commit.
+- 2026-11-17 21:05 DONE M4 block A (audio focus and calls) - Files: engine/{CallPolicy,AlarmPlayer,RingingService}.kt,
+  CallPolicyTest (2) - Verified on the emulator with `gsm call` / `accept` / `cancel`: during a ring the alarm
+  pauses and a soft tone repeats ("call detected (audio mode 1)", then "call ended: alarm resumes"); an alarm
+  that fires during a call gets its focus request denied (result 0), detects mode 2 at start, rings softly and
+  resumes after hang-up. Decisions logged in code: the auto-silence keeps counting during a call and the mission
+  is still required afterwards. The emulator proves the state transitions in logs, not audibility; a real call is
+  a DV item.
+- 2026-11-17 21:15 DONE M4 blocks B, C and D - Files: engine/{CallPolicy,AlarmPlayer,RingingService}.kt,
+  res/{mipmap-anydpi/ic_launcher.xml,drawable/ic_launcher_foreground.xml,drawable/ic_launcher_monochrome.xml},
+  AndroidManifest (icon), ui/ringing/MissionScreens.kt (progress semantics), ui/alarms/EditorWidgets.kt (time picker
+  font), strings en/es, app/build.gradle.kts (conditional signing, R8), app/proguard-rules.pro, .gitignore
+  (`.signing/`) - Verified: see "M4" in Checkpoints.
+- 2026-11-17 21:16 DECIDED M4 checkpoint - approved (unattended): no ADR change; the keystore backup, recreating
+  the alarms and the icon review are [user] items in "Waiting for you".
 - 2026-11-17 DONE checkpoint D1 — approved by the user (screens fine; Stitch web canvas renders them partially). M1b's D1 gate is met.
 - 2026-11-17 START D2/1 — variants of alarm list and ringing screen, both vibe archetypes (interactive session)
 - 2026-11-17 FINDING D2/1 — Stitch timed out on 6 of 9 generation calls; saved variants/list-A1, list-A2 (Editorial) and ringing-B1 (Ethereal, rendered as desktop). list-B and ringing-A may exist only in the Stitch web UI. Waiting for the user to check the web UI and pick a direction.

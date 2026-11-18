@@ -54,6 +54,14 @@ class AlarmPlayer(private val context: Context) {
         player?.setVolume(gain, gain)
     }
 
+    fun pause() {
+        player?.runCatching { if (isPlaying) pause() }
+    }
+
+    fun resume() {
+        player?.runCatching { if (!isPlaying) start() }
+    }
+
     fun release() {
         player?.runCatching { stop(); release() }
         player = null

@@ -44,7 +44,10 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.disabled
+import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
@@ -128,12 +131,17 @@ private fun ColumnScope.MathContent(view: MissionView.MathView, onSubmit: (Int) 
         input = NumpadInput()
         showWrong = false
     }
+    val barDescription = stringResource(R.string.mission_progress_description, view.solved, view.target)
     Box(
         Modifier
             .fillMaxWidth()
             .height(4.dp)
             .clip(CircleShape)
-            .background(scheme.surfaceContainerHigh),
+            .background(scheme.surfaceContainerHigh)
+            .semantics {
+                contentDescription = barDescription
+                progressBarRangeInfo = ProgressBarRangeInfo(view.solved.toFloat(), 0f..view.target.toFloat())
+            },
     ) {
         Box(
             Modifier
@@ -279,9 +287,14 @@ private fun ProgressRing(count: Int, target: Int, icon: Int, unit: String?) {
     val track = scheme.surfaceContainerHigh
     val accent = scheme.primary
     val fraction = (count.toFloat() / target.coerceAtLeast(1)).coerceIn(0f, 1f)
+    val description = stringResource(R.string.mission_progress_description, count, target)
     Box(
         Modifier
             .size(248.dp)
+            .semantics {
+                contentDescription = description
+                progressBarRangeInfo = ProgressBarRangeInfo(count.toFloat(), 0f..target.toFloat())
+            }
             .drawBehind {
                 val stroke = 8.dp.toPx()
                 val inset = stroke / 2
@@ -332,6 +345,7 @@ private fun SwitchToMath(enabled: Boolean, onClick: () -> Unit) {
                         cornerRadius = CornerRadius(size.height / 2),
                     )
                 }
+                .semantics { disabled() }
                 .testTag("switch-to-math-locked"),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),

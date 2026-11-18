@@ -12,7 +12,10 @@ import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
 import android.database.ContentObserver
 import android.graphics.drawable.Icon
+import android.media.AudioAttributes
+import android.media.AudioFocusRequest
 import android.media.AudioManager
+import android.media.ToneGenerator
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
@@ -63,6 +66,10 @@ class RingingService : Service(), RingActions {
     private var volumeObserver: ContentObserver? = null
     private var rampFraction = 1f
     private var ducked = false
+    private var audioFocus: AudioFocusRequest? = null
+    private var modeListener: AudioManager.OnModeChangedListener? = null
+    private var inCall = false
+    private var tone: ToneGenerator? = null
     private var rampStartMs = 0L
     private var rampDurationMs = 0L
 
@@ -85,6 +92,13 @@ class RingingService : Service(), RingActions {
         override fun run() {
             onMissionEvent()
             handler.postDelayed(this, TICK_MS)
+        }
+    }
+
+    private val callBeep = object : Runnable {
+        override fun run() {
+            tone?.startTone(ToneGenerator.TONE_PROP_BEEP, CALL_BEEP_LENGTH_MS)
+            handler.postDelayed(this, CALL_BEEP_EVERY_MS)
         }
     }
 
@@ -171,6 +185,7 @@ class RingingService : Service(), RingActions {
         vibrates = alarm.vibrate
         if (vibrates || !soundOk) startVibration()
         ringing = true
+        watchCalls()
         RingingController.publish(RingingState.Ringing(ringInfo))
         handler.post(rearmBackup)
         scheduleAutoSilence(alarmId)
@@ -396,6 +411,60 @@ class RingingService : Service(), RingActions {
         volumeObserver = observer
     }
 
+    /**
+     * Asks for transient audio focus so other players yield, and follows `AudioManager.mode`. A focus request
+     * that is denied (an alarm that fires during a call) changes nothing: the alarm still rings, softly, until
+     * the call ends. The auto-silence keeps counting during a call, and the mission is still required after it.
+     */
+    private fun watchCalls() {
+        val audio = getSystemService(AudioManager::class.java)
+        val request = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE)
+            .setAudioAttributes(
+                AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_ALARM)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .build(),
+            )
+            .setOnAudioFocusChangeListener({ change -> Log.i(TAG, "audio focus change $change") }, handler)
+            .build()
+        audioFocus = request
+        Log.i(TAG, "audio focus request result ${audio.requestAudioFocus(request)} (1 granted, 0 failed, 2 delayed)")
+        val listener = AudioManager.OnModeChangedListener { mode -> handler.post { onAudioMode(mode) } }
+        audio.addOnModeChangedListener(mainExecutor, listener)
+        modeListener = listener
+        onAudioMode(audio.mode)
+    }
+
+    private fun onAudioMode(mode: Int) {
+        if (!ringing) return
+        val busy = CallPolicy.isBusy(mode)
+        if (busy == inCall) return
+        inCall = busy
+        Log.i(TAG, if (busy) "call detected (audio mode $mode): alarm paused, soft tone" else "call ended: alarm resumes")
+        if (busy) {
+            alarmPlayer.pause()
+            tone = ToneGenerator(AudioManager.STREAM_ALARM, CALL_BEEP_VOLUME)
+            handler.post(callBeep)
+        } else {
+            handler.removeCallbacks(callBeep)
+            tone?.release()
+            tone = null
+            alarmPlayer.resume()
+        }
+    }
+
+    private fun stopWatchingCalls() {
+        val audio = getSystemService(AudioManager::class.java)
+        modeListener?.let { audio.removeOnModeChangedListener(it) }
+        modeListener = null
+        audioFocus?.let { audio.abandonAudioFocusRequest(it) }
+        audioFocus = null
+        handler.removeCallbacks(callBeep)
+        tone?.release()
+        tone = null
+        inCall = false
+    }
+
     private fun restoreAlarmVolume() {
         volumeObserver?.let { contentResolver.unregisterContentObserver(it) }
         volumeObserver = null
@@ -513,6 +582,7 @@ class RingingService : Service(), RingActions {
         handler.removeCallbacks(finishMission)
         handler.removeCallbacksAndMessages(DEBUG_TOKEN)
         sensors.stop()
+        stopWatchingCalls()
         runner = null
         info = null
         missionDone = false
@@ -541,6 +611,9 @@ class RingingService : Service(), RingActions {
         private const val RAMP_STEP_MS = 500L
         private const val TICK_MS = 1_000L
         private const val DONE_SHOW_MS = 800L
+        private const val CALL_BEEP_EVERY_MS = 4_000L
+        private const val CALL_BEEP_LENGTH_MS = 300
+        private const val CALL_BEEP_VOLUME = 30
         private const val BACKUP_REARM_MS = 20_000L
         private val BACKUP_AHEAD: Duration = Duration.ofSeconds(60)
         private val MAX_RING_MS = RingingPolicy.AUTO_SILENCE.toMillis()

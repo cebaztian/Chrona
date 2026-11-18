@@ -1,5 +1,7 @@
 import com.android.build.api.artifact.SingleArtifact
 
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -35,6 +37,11 @@ tasks.named("check") {
     dependsOn("checkNoInternetPermission")
 }
 
+val keystoreProperties = Properties().apply {
+    val file = rootProject.file("keystore.properties")
+    if (file.exists()) file.inputStream().use { load(it) }
+}
+
 android {
     namespace = "com.nutabe.chrona"
     compileSdk {
@@ -50,12 +57,26 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        if (keystoreProperties.containsKey("storeFile")) {
+            create("release") {
+                storeFile = rootProject.file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         debug {
             applicationIdSuffix = ".debug"
         }
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            signingConfig = signingConfigs.findByName("release")
         }
     }
 
