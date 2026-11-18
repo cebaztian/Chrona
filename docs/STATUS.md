@@ -19,7 +19,7 @@ resumes from this file. Answer the "Waiting for you" items here or in the sessio
 | M1b | done | approved (unattended), 2026-11-17 | `0a3ca70` "add alarm store, scheduler and reconciliation" (local, not pushed) |
 | M1c | done | approved (unattended), 2026-11-17 | `ed0ff0b` "verify engine reliability" (local, not pushed) |
 | M2 | done | approved (unattended), 2026-11-17 | `3b60aa9` "add alarm list, editor, settings and health screen" (local, not pushed) |
-| M3 | done | approved (unattended), 2026-11-17 | HASH_M3 "add ringing screen and missions" (local, not pushed) |
+| M3 | done | approved (unattended), 2026-11-17 | `8fc9608` "add ringing screen and missions" (local, not pushed) |
 | M4 | todo | | |
 | DV | todo (your decision at the start: S25 over adb, or a hand-installed APK) | | |
 
@@ -746,6 +746,7 @@ No screen has a brown background, white text on orange, or more than one orange-
   with 171 unit tests; `connectedDebugAndroidTest` 35 tests, 0 failures.
 - 2026-11-17 20:42 DECIDED M3 checkpoint - approved (unattended): ADR changes none (ADR-014 stays *Proposed*
   until DV, per the user); the known gaps above go to DV or later.
+- 2026-11-17 20:50 COMMIT M3 - `8fc9608` "add ringing screen and missions" (local only).
 - 2026-11-17 DONE checkpoint D1 — approved by the user (screens fine; Stitch web canvas renders them partially). M1b's D1 gate is met.
 - 2026-11-17 START D2/1 — variants of alarm list and ringing screen, both vibe archetypes (interactive session)
 - 2026-11-17 FINDING D2/1 — Stitch timed out on 6 of 9 generation calls; saved variants/list-A1, list-A2 (Editorial) and ringing-B1 (Ethereal, rendered as desktop). list-B and ringing-A may exist only in the Stitch web UI. Waiting for the user to check the web UI and pick a direction.
