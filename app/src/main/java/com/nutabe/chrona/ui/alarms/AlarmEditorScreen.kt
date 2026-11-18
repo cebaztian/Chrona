@@ -2,7 +2,6 @@ package com.nutabe.chrona.ui.alarms
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -37,6 +36,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -59,6 +60,7 @@ import com.nutabe.chrona.ui.components.InfoPill
 import com.nutabe.chrona.ui.components.PillCta
 import com.nutabe.chrona.ui.components.SecondaryPill
 import com.nutabe.chrona.mission.MissionEnvironment
+import com.nutabe.chrona.ui.components.hapticClickable
 import com.nutabe.chrona.ui.ringing.MissionPreview
 import java.time.DayOfWeek
 
@@ -202,7 +204,7 @@ private fun EditorTopBar(isNew: Boolean, onBack: () -> Unit, onDelete: () -> Uni
 
 @Composable
 private fun IconButtonBox(icon: Int, description: String, tag: String, onClick: () -> Unit) {
-    Box(Modifier.size(48.dp).clip(CircleShape).clickable(onClick = onClick).testTag(tag), contentAlignment = Alignment.Center) {
+    Box(Modifier.size(48.dp).clip(CircleShape).hapticClickable(onClick = onClick).testTag(tag), contentAlignment = Alignment.Center) {
         ChronaIcon(icon, contentDescription = description, size = 24.dp)
     }
 }
@@ -220,7 +222,7 @@ private fun TimeSection(alarm: Alarm, ringsIn: RingsIn?, onClick: () -> Unit) {
     val scheme = MaterialTheme.colorScheme
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Row(
-            Modifier.clickable(onClick = onClick).testTag("time-boxes"),
+            Modifier.hapticClickable(onClick = onClick).testTag("time-boxes"),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
@@ -272,7 +274,7 @@ private fun RepeatRow(selected: Set<DayOfWeek>, onToggle: (DayOfWeek) -> Unit) {
                     .size(44.dp)
                     .clip(CircleShape)
                     .then(if (isOn) Modifier.background(scheme.secondaryContainer) else Modifier.border(1.dp, scheme.secondary.copy(alpha = 0.7f), CircleShape))
-                    .clickable { onToggle(day) }
+                    .hapticClickable(type = if (isOn) HapticFeedbackType.ToggleOff else HapticFeedbackType.ToggleOn) { onToggle(day) }
                     .semantics { role = Role.Checkbox; this.selected = isOn }
                     .testTag("day-${day.value}"),
                 contentAlignment = Alignment.Center,
@@ -320,7 +322,7 @@ private fun MissionRow(mission: Mission, onClick: () -> Unit) {
             Modifier
                 .fillMaxWidth()
                 .then(if (mission != Mission.None) Modifier.border(1.dp, scheme.primary, MaterialTheme.shapes.large) else Modifier)
-                .clickable(onClick = onClick)
+                .hapticClickable(onClick = onClick)
                 .padding(16.dp)
                 .testTag("mission-row"),
             verticalAlignment = Alignment.CenterVertically,
@@ -354,9 +356,14 @@ private fun VolumeRow(percent: Int, onChange: (Int) -> Unit) {
             inactiveTrackColor = scheme.surfaceContainerHigh,
         )
         val interaction = remember { MutableInteractionSource() }
+        val haptics = LocalHapticFeedback.current
         Slider(
             value = percent.toFloat(),
-            onValueChange = { onChange(it.toInt().coerceIn(10, 100)) },
+            onValueChange = {
+                val next = it.toInt().coerceIn(10, 100)
+                if (next != percent) haptics.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
+                onChange(next)
+            },
             valueRange = 10f..100f,
             modifier = Modifier.testTag("volume-slider"),
             colors = colors,

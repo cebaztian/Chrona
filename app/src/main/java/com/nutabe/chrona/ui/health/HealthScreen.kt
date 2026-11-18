@@ -3,7 +3,6 @@ package com.nutabe.chrona.ui.health
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,6 +32,7 @@ import com.nutabe.chrona.ui.components.DoubleBezelCard
 import com.nutabe.chrona.ui.components.EyebrowTag
 import com.nutabe.chrona.ui.components.PillCta
 import com.nutabe.chrona.ui.components.SecondaryPill
+import com.nutabe.chrona.ui.components.hapticClickable
 
 /** Stateless: the rows come from [healthReport] and every tap goes out as [onAction]. */
 @Composable
@@ -68,7 +68,7 @@ fun HealthScreen(
                     HealthRow(item, onAction)
                 }
             }
-            if (samsung != null) SamsungCard(onAction = { onAction(HealthKind.SAMSUNG_GUIDE) })
+            if (samsung != null) SamsungCard(samsung.status, onAction = { onAction(HealthKind.SAMSUNG_GUIDE) })
         }
     }
 }
@@ -83,14 +83,14 @@ private fun HealthTopBar(onBack: () -> Unit, onRefresh: () -> Unit) {
             Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Box(Modifier.size(48.dp).clip(CircleShape).clickable(onClick = onBack).testTag("health-back"), contentAlignment = Alignment.Center) {
+            Box(Modifier.size(48.dp).clip(CircleShape).hapticClickable(onClick = onBack).testTag("health-back"), contentAlignment = Alignment.Center) {
                 ChronaIcon(R.drawable.ic_caret_left, contentDescription = stringResource(R.string.back_cd))
             }
             Column(Modifier.weight(1f).padding(start = 8.dp)) {
                 Text(stringResource(R.string.health_title), style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onSurface)
                 Text(stringResource(R.string.health_subtitle), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            Box(Modifier.size(48.dp).clip(CircleShape).clickable(onClick = onRefresh).testTag("health-refresh"), contentAlignment = Alignment.Center) {
+            Box(Modifier.size(48.dp).clip(CircleShape).hapticClickable(onClick = onRefresh).testTag("health-refresh"), contentAlignment = Alignment.Center) {
                 ChronaIcon(R.drawable.ic_arrow_clockwise, contentDescription = stringResource(R.string.health_refresh_cd))
             }
         }
@@ -209,15 +209,19 @@ private fun itemDetail(item: HealthItem): String? = when (item.kind) {
 }
 
 @Composable
-private fun SamsungCard(onAction: () -> Unit) {
+private fun SamsungCard(status: HealthStatus, onAction: () -> Unit) {
     val scheme = MaterialTheme.colorScheme
     DoubleBezelCard(Modifier.fillMaxWidth().testTag("health-samsung")) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                ChronaIcon(statusIcon(HealthStatus.ATTENTION), tint = statusColor(HealthStatus.ATTENTION), size = 22.dp)
+                ChronaIcon(statusIcon(status), tint = statusColor(status), size = 22.dp)
                 Text(stringResource(R.string.health_samsung), style = MaterialTheme.typography.bodyLarge, color = scheme.onSurface)
             }
-            Text(stringResource(R.string.health_samsung_text), style = MaterialTheme.typography.bodyMedium, color = scheme.onSurfaceVariant)
+            Text(
+                stringResource(if (status == HealthStatus.OK) R.string.health_samsung_sleeping else R.string.health_samsung_text),
+                style = MaterialTheme.typography.bodyMedium,
+                color = scheme.onSurfaceVariant,
+            )
             PillCta(stringResource(R.string.health_open_settings), onAction, Modifier.fillMaxWidth(), height = 52.dp)
         }
     }

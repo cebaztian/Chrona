@@ -67,8 +67,15 @@ class HealthModelTest {
     fun theSamsungGuideAppearsOnlyOnSamsung() {
         assertFalse(healthReport(healthy).any { it.kind == HealthKind.SAMSUNG_GUIDE })
         val samsung = healthReport(healthy.copy(isSamsung = true)).first { it.kind == HealthKind.SAMSUNG_GUIDE }
-        assertEquals(HealthStatus.ATTENTION, samsung.status)
+        assertEquals(HealthStatus.OK, samsung.status)
         assertNull(samsung.percent)
+    }
+
+    @Test
+    fun theSamsungGuideWarnsOnlyWhileTheBatteryIsRestricted() {
+        val restricted = healthy.copy(isSamsung = true, ignoringBatteryOptimizations = false)
+        assertEquals(HealthStatus.ATTENTION, statusOf(restricted, HealthKind.SAMSUNG_GUIDE))
+        assertEquals(HealthStatus.OK, statusOf(restricted.copy(ignoringBatteryOptimizations = true), HealthKind.SAMSUNG_GUIDE))
     }
 
     @Test

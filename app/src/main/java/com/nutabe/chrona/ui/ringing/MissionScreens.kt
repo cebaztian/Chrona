@@ -6,7 +6,6 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -58,6 +57,7 @@ import com.nutabe.chrona.mission.NumpadInput
 import com.nutabe.chrona.ui.components.ChronaIcon
 import com.nutabe.chrona.ui.components.DoubleBezelCard
 import com.nutabe.chrona.ui.components.EyebrowTag
+import com.nutabe.chrona.ui.components.hapticClickable
 import com.nutabe.chrona.ui.theme.ChronaText
 import kotlin.math.roundToInt
 
@@ -234,7 +234,7 @@ private fun Key(modifier: Modifier, onClick: () -> Unit, accent: Boolean = false
             .height(72.dp)
             .clip(MaterialTheme.shapes.medium)
             .background(if (accent) scheme.primary else scheme.surfaceContainerHigh)
-            .clickable(onClick = onClick),
+            .hapticClickable(type = if (accent) HapticFeedbackType.Confirm else HapticFeedbackType.VirtualKey, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) { content() }
 }
@@ -327,7 +327,7 @@ private fun SwitchToMath(enabled: Boolean, onClick: () -> Unit) {
                 .height(64.dp)
                 .clip(CircleShape)
                 .border(BorderStroke(1.dp, scheme.secondary), CircleShape)
-                .clickable(onClick = onClick)
+                .hapticClickable(onClick = onClick)
                 .testTag("switch-to-math"),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center,

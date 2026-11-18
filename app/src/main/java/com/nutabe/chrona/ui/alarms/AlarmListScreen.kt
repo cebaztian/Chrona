@@ -1,7 +1,8 @@
 package com.nutabe.chrona.ui.alarms
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,6 +15,8 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -21,10 +24,18 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
@@ -37,6 +48,7 @@ import com.nutabe.chrona.ui.components.ChronaSwitch
 import com.nutabe.chrona.ui.components.DoubleBezelCard
 import com.nutabe.chrona.ui.components.EyebrowTag
 import com.nutabe.chrona.ui.components.InfoPill
+import com.nutabe.chrona.ui.components.hapticClickable
 
 /** Stateless: everything comes in as [state] and goes out as callbacks, so UI tests never touch the store. */
 @Composable
@@ -47,11 +59,23 @@ fun AlarmListScreen(
     onOpen: (id: Long) -> Unit,
     onAdd: () -> Unit,
     onSettings: () -> Unit,
+    onDuplicate: (id: Long) -> Unit = {},
+    onDelete: (id: Long) -> Unit = {},
+    onSelect: (id: Long) -> Unit = {},
+    onToggleSelected: (id: Long) -> Unit = {},
+    onCancelSelection: () -> Unit = {},
+    onDeleteSelected: () -> Unit = {},
 ) {
+    val selection = state.selection
+    BackHandler(enabled = selection != null, onBack = onCancelSelection)
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
-        topBar = { ListTopBar(onSettings) },
-        floatingActionButton = { ChronaFab(R.drawable.ic_plus, stringResource(R.string.add_alarm_cd), onAdd, Modifier.testTag("add-alarm")) },
+        topBar = {
+            if (selection == null) ListTopBar(onSettings) else SelectionTopBar(selection.size, onCancelSelection, onDeleteSelected)
+        },
+        floatingActionButton = {
+            if (selection == null) ChronaFab(R.drawable.ic_plus, stringResource(R.string.add_alarm_cd), onAdd, Modifier.testTag("add-alarm"))
+        },
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
         if (state.items.isEmpty()) {
@@ -63,7 +87,17 @@ fun AlarmListScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 state.nextRingsIn?.let { next -> item(key = "header") { NextAlarmHeader(next) } }
-                items(state.items, key = { it.alarm.id }) { item -> AlarmCard(item, onToggle, onOpen) }
+                items(state.items, key = { it.alarm.id }) { item -> AlarmCard(
+                        item = item,
+                        selection = selection,
+                        onToggle = onToggle,
+                        onOpen = onOpen,
+                        onDuplicate = onDuplicate,
+                        onDelete = onDelete,
+                        onSelect = onSelect,
+                        onToggleSelected = onToggleSelected,
+                    )
+                }
             }
         }
     }
@@ -78,8 +112,33 @@ private fun ListTopBar(onSettings: () -> Unit) {
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text(stringResource(R.string.alarms_title), style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onSurface)
-            Box(Modifier.size(48.dp).clickable(onClick = onSettings).testTag("open-settings"), contentAlignment = Alignment.Center) {
+            Box(Modifier.size(48.dp).hapticClickable(onClick = onSettings).testTag("open-settings"), contentAlignment = Alignment.Center) {
                 ChronaIcon(R.drawable.ic_gear_six, contentDescription = stringResource(R.string.settings_cd), size = 28.dp)
+            }
+        }
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+    }
+}
+
+@Composable
+private fun SelectionTopBar(count: Int, onClose: () -> Unit, onDelete: () -> Unit) {
+    Column(Modifier.statusBarsPadding()) {
+        Row(
+            Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, top = 12.dp, bottom = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Box(Modifier.size(48.dp).clip(CircleShape).hapticClickable(onClick = onClose).testTag("selection-close"), contentAlignment = Alignment.Center) {
+                ChronaIcon(R.drawable.ic_x, contentDescription = stringResource(R.string.selection_close_cd), size = 28.dp)
+            }
+            Text(
+                pluralStringResource(R.plurals.alarms_selected, count, count),
+                style = MaterialTheme.typography.headlineMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.weight(1f).testTag("selection-count"),
+            )
+            Box(Modifier.size(48.dp).clip(CircleShape).hapticClickable(onClick = onDelete).testTag("selection-delete"), contentAlignment = Alignment.Center) {
+                ChronaIcon(R.drawable.ic_trash, contentDescription = stringResource(R.string.selection_delete_cd), size = 28.dp)
             }
         }
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
@@ -108,8 +167,20 @@ private fun NextAlarmHeader(next: RingsIn) {
 }
 
 @Composable
-private fun AlarmCard(item: AlarmItem, onToggle: (Long, Boolean) -> Unit, onOpen: (Long) -> Unit) {
+private fun AlarmCard(
+    item: AlarmItem,
+    selection: Set<Long>?,
+    onToggle: (Long, Boolean) -> Unit,
+    onOpen: (Long) -> Unit,
+    onDuplicate: (Long) -> Unit,
+    onDelete: (Long) -> Unit,
+    onSelect: (Long) -> Unit,
+    onToggleSelected: (Long) -> Unit,
+) {
     val alarm = item.alarm
+    val selecting = selection != null
+    val selected = selection?.contains(alarm.id) == true
+    var menuOpen by remember { mutableStateOf(false) }
     val scheme = MaterialTheme.colorScheme
     val locked = item.lock != null
     DoubleBezelCard(
@@ -119,7 +190,13 @@ private fun AlarmCard(item: AlarmItem, onToggle: (Long, Boolean) -> Unit, onOpen
         Row(
             Modifier
                 .fillMaxWidth()
-                .then(if (locked) Modifier else Modifier.clickable { onOpen(alarm.id) })
+                .then(
+                    when {
+                        locked -> Modifier
+                        selecting -> Modifier.hapticClickable { onToggleSelected(alarm.id) }.semantics { this.selected = selected }
+                        else -> Modifier.hapticClickable(onLongClick = { menuOpen = true }) { onOpen(alarm.id) }
+                    },
+                )
                 .padding(horizontal = 20.dp, vertical = 18.dp),
             verticalAlignment = Alignment.Top,
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -148,10 +225,57 @@ private fun AlarmCard(item: AlarmItem, onToggle: (Long, Boolean) -> Unit, onOpen
                 Box(Modifier.size(48.dp).border(1.dp, scheme.secondary, CircleShape), contentAlignment = Alignment.Center) {
                     ChronaIcon(R.drawable.ic_lock_simple, size = 22.dp)
                 }
+            } else if (selecting) {
+                SelectionMark(selected, Modifier.testTag("mark-${alarm.id}"))
             } else {
                 ChronaSwitch(alarm.enabled, { onToggle(alarm.id, it) }, Modifier.testTag("toggle-${alarm.id}"))
             }
         }
+        DropdownMenu(
+            expanded = menuOpen,
+            onDismissRequest = { menuOpen = false },
+            containerColor = scheme.surfaceContainer,
+            modifier = Modifier.testTag("alarm-menu-${alarm.id}"),
+        ) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.alarm_duplicate), style = MaterialTheme.typography.bodyLarge, color = scheme.onSurface) },
+                onClick = {
+                    menuOpen = false
+                    onDuplicate(alarm.id)
+                },
+                modifier = Modifier.testTag("duplicate-${alarm.id}"),
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.alarm_select), style = MaterialTheme.typography.bodyLarge, color = scheme.onSurface) },
+                onClick = {
+                    menuOpen = false
+                    onSelect(alarm.id)
+                },
+                modifier = Modifier.testTag("select-${alarm.id}"),
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.alarm_delete), style = MaterialTheme.typography.bodyLarge, color = scheme.error) },
+                onClick = {
+                    menuOpen = false
+                    onDelete(alarm.id)
+                },
+                modifier = Modifier.testTag("delete-${alarm.id}"),
+            )
+        }
+    }
+}
+
+@Composable
+private fun SelectionMark(selected: Boolean, modifier: Modifier = Modifier) {
+    val scheme = MaterialTheme.colorScheme
+    Box(
+        modifier
+            .size(32.dp)
+            .clip(CircleShape)
+            .then(if (selected) Modifier.background(scheme.primary) else Modifier.border(1.5.dp, scheme.secondary, CircleShape)),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (selected) ChronaIcon(R.drawable.ic_check, tint = scheme.onPrimary, size = 20.dp)
     }
 }
 

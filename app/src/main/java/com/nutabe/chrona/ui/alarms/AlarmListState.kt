@@ -52,7 +52,15 @@ data class AlarmListState(
     val items: List<AlarmItem> = emptyList(),
     /** Time to the next enabled alarm, or null when nothing is scheduled. */
     val nextRingsIn: RingsIn? = null,
-)
+    /** Ids chosen for a bulk action, or null when the list is not in selection mode. */
+    val selection: Set<Long>? = null,
+) {
+    /** Keeps only ids that are still selectable (present and not locked); an empty result leaves selection mode. */
+    fun withSelection(chosen: Set<Long>?): AlarmListState {
+        val valid = chosen?.intersect(items.filter { it.lock == null }.mapTo(HashSet()) { it.alarm.id })
+        return copy(selection = valid?.takeIf { it.isNotEmpty() })
+    }
+}
 
 fun alarmListState(data: StoreData, now: Instant, zone: ZoneId = ZoneId.systemDefault()): AlarmListState {
     val items = data.alarms

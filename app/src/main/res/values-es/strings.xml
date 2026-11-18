@@ -49,7 +49,19 @@
     <string name="empty_subtitle">Crea tu primera alarma</string>
     <string name="empty_note">Para apagarla tendrás que completar una misión</string>
 
-    <string name="alarm_deleted">Alarma eliminada</string>
+    <plurals name="alarms_deleted">
+        <item quantity="one">Alarma eliminada</item>
+        <item quantity="other">%d alarmas eliminadas</item>
+    </plurals>
+    <plurals name="alarms_selected">
+        <item quantity="one">%d seleccionada</item>
+        <item quantity="other">%d seleccionadas</item>
+    </plurals>
+    <string name="alarm_select">Seleccionar</string>
+    <string name="alarm_delete">Eliminar</string>
+    <string name="selection_close_cd">Cancelar selección</string>
+    <string name="selection_delete_cd">Eliminar alarmas seleccionadas</string>
+    <string name="alarm_duplicate">Duplicar</string>
     <string name="undo">Deshacer</string>
 
     <string name="back_cd">Atrás</string>
@@ -155,6 +167,7 @@
     <string name="dnd_total">El silencio total bloquea las alarmas</string>
     <string name="health_samsung">Ajustes de Samsung</string>
     <string name="health_samsung_text">Pon la batería en Sin restricciones y mantén Chrona fuera de Aplicaciones en suspensión</string>
+    <string name="health_samsung_sleeping">Mantén Chrona fuera de Aplicaciones en suspensión</string>
     <string name="health_granted">Concedido</string>
     <string name="health_missing">Sin conceder</string>
     <string name="health_configure">Configurar</string>

@@ -63,7 +63,9 @@ fun healthReport(facts: HealthFacts): List<HealthItem> = buildList {
             dnd = facts.dnd,
         ),
     )
-    if (facts.isSamsung) add(HealthItem(HealthKind.SAMSUNG_GUIDE, HealthStatus.ATTENTION))
+    if (facts.isSamsung) {
+        add(HealthItem(HealthKind.SAMSUNG_GUIDE, if (facts.ignoringBatteryOptimizations) HealthStatus.OK else HealthStatus.ATTENTION))
+    }
 }
 
 /** Number of rows that are not OK: the badge in Settings. */

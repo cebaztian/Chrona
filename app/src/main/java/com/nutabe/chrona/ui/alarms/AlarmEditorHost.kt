@@ -35,8 +35,8 @@ import kotlinx.coroutines.withContext
 
 /** Connects the stateless editor to the repository, the permission system and the sound pickers. */
 @Composable
-fun AlarmEditorHost(container: AppContainer, alarmId: Long, onClose: () -> Unit) {
-    val viewModel = viewModel(key = "editor-$alarmId") { AlarmEditorViewModel(container.repository, alarmId) }
+fun AlarmEditorHost(container: AppContainer, alarmId: Long, copyOf: Long, onClose: () -> Unit) {
+    val viewModel = viewModel(key = "editor-$alarmId-$copyOf") { AlarmEditorViewModel(container.repository, alarmId, copyOf) }
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -69,7 +69,7 @@ fun AlarmEditorHost(container: AppContainer, alarmId: Long, onClose: () -> Unit)
         onBack = onClose,
         onDelete = {
             scope.launch {
-                viewModel.delete()?.let { container.deletedAlarm.value = it }
+                viewModel.delete()?.let { container.deletedAlarms.value = listOf(it) }
                 onClose()
             }
         },

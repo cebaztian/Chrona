@@ -1,7 +1,6 @@
 package com.nutabe.chrona.ui.onboarding
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,6 +29,7 @@ import com.nutabe.chrona.ui.components.DoubleBezelCard
 import com.nutabe.chrona.ui.components.EyebrowTag
 import com.nutabe.chrona.ui.components.PillCta
 import com.nutabe.chrona.ui.components.SecondaryPill
+import com.nutabe.chrona.ui.components.hapticClickable
 
 const val ONBOARDING_STEPS = 3
 
@@ -65,7 +65,7 @@ fun OnboardingScreen(
             Column(Modifier.statusBarsPadding()) {
                 Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                     if (step > 1) {
-                        Box(Modifier.size(48.dp).clip(CircleShape).clickable(onClick = onBack).testTag("onboarding-back"), contentAlignment = Alignment.Center) {
+                        Box(Modifier.size(48.dp).clip(CircleShape).hapticClickable(onClick = onBack).testTag("onboarding-back"), contentAlignment = Alignment.Center) {
                             ChronaIcon(R.drawable.ic_caret_left, contentDescription = stringResource(R.string.back_cd))
                         }
                     } else {
@@ -76,7 +76,7 @@ fun OnboardingScreen(
                         stringResource(R.string.onboarding_skip),
                         style = MaterialTheme.typography.bodyLarge,
                         color = scheme.onSurfaceVariant,
-                        modifier = Modifier.clip(CircleShape).clickable(onClick = onSkip).padding(horizontal = 12.dp, vertical = 12.dp).testTag("onboarding-skip"),
+                        modifier = Modifier.clip(CircleShape).hapticClickable(onClick = onSkip).padding(horizontal = 12.dp, vertical = 12.dp).testTag("onboarding-skip"),
                     )
                 }
                 Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -127,7 +127,7 @@ fun OnboardingScreen(
                     style = MaterialTheme.typography.bodyLarge,
                     color = scheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth().clip(CircleShape).clickable(onClick = onNotNow).padding(vertical = 14.dp).testTag("onboarding-not-now"),
+                    modifier = Modifier.fillMaxWidth().clip(CircleShape).hapticClickable(onClick = onNotNow).padding(vertical = 14.dp).testTag("onboarding-not-now"),
                 )
             }
         }

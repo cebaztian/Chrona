@@ -1,6 +1,5 @@
 package com.nutabe.chrona.ui.settings
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,6 +30,7 @@ import com.nutabe.chrona.ui.components.ChronaIcon
 import com.nutabe.chrona.ui.components.DoubleBezelCard
 import com.nutabe.chrona.ui.components.EyebrowTag
 import com.nutabe.chrona.ui.components.InfoPill
+import com.nutabe.chrona.ui.components.hapticClickable
 import com.nutabe.chrona.ui.health.issueCount
 import com.nutabe.chrona.ui.health.rememberHealthItems
 
@@ -49,7 +49,7 @@ fun SettingsScreen(
         topBar = {
             Column(Modifier.statusBarsPadding()) {
                 Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(48.dp).clip(CircleShape).clickable(onClick = onBack).testTag("settings-back"), contentAlignment = Alignment.Center) {
+                    Box(Modifier.size(48.dp).clip(CircleShape).hapticClickable(onClick = onBack).testTag("settings-back"), contentAlignment = Alignment.Center) {
                         ChronaIcon(R.drawable.ic_caret_left, contentDescription = stringResource(R.string.back_cd))
                     }
                     Text(stringResource(R.string.settings_title), style = MaterialTheme.typography.headlineMedium, color = scheme.onSurface, modifier = Modifier.padding(start = 8.dp))

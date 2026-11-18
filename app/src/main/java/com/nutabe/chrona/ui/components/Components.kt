@@ -7,7 +7,10 @@ import androidx.compose.animation.core.spring
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -32,11 +35,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -117,7 +123,7 @@ fun PillCta(
             .height(height)
             .clip(CircleShape)
             .background(scheme.primary)
-            .clickable(interactionSource = source, indication = null, enabled = enabled, onClick = onClick)
+            .hapticClickable(enabled = enabled, type = HapticFeedbackType.Confirm, interactionSource = source, showIndication = false, onClick = onClick)
             .padding(start = 28.dp, end = if (trailingIcon != null) 12.dp else 28.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -149,7 +155,7 @@ fun SecondaryPill(
             .defaultMinSize(minHeight = height)
             .clip(CircleShape)
             .border(BorderStroke(1.dp, secondary), CircleShape)
-            .clickable(enabled = enabled, onClick = onClick)
+            .hapticClickable(enabled = enabled, onClick = onClick)
             .padding(horizontal = 20.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
@@ -184,9 +190,15 @@ fun InfoPill(
 @Composable
 fun ChronaSwitch(checked: Boolean, onCheckedChange: ((Boolean) -> Unit)?, modifier: Modifier = Modifier, enabled: Boolean = true) {
     val scheme = MaterialTheme.colorScheme
+    val haptics = LocalHapticFeedback.current
     Switch(
         checked = checked,
-        onCheckedChange = onCheckedChange,
+        onCheckedChange = onCheckedChange?.let { change ->
+            { on ->
+                haptics.performHapticFeedback(if (on) HapticFeedbackType.ToggleOn else HapticFeedbackType.ToggleOff)
+                change(on)
+            }
+        },
         modifier = modifier,
         enabled = enabled,
         colors = SwitchDefaults.colors(
@@ -202,12 +214,44 @@ fun ChronaSwitch(checked: Boolean, onCheckedChange: ((Boolean) -> Unit)?, modifi
 
 @Composable
 fun ChronaFab(@DrawableRes icon: Int, contentDescription: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val haptics = LocalHapticFeedback.current
     FloatingActionButton(
-        onClick = onClick,
+        onClick = {
+            haptics.performHapticFeedback(HapticFeedbackType.Confirm)
+            onClick()
+        },
         modifier = modifier,
         shape = CircleShape,
         containerColor = MaterialTheme.colorScheme.primary,
         contentColor = MaterialTheme.colorScheme.onPrimary,
         elevation = FloatingActionButtonDefaults.elevation(0.dp, 0.dp, 0.dp, 0.dp),
     ) { ChronaIcon(icon, tint = MaterialTheme.colorScheme.onPrimary, contentDescription = contentDescription) }
+}
+
+/** `clickable` that also plays a haptic tick, which Compose's own `clickable` does not; a long press plays its own. */
+@OptIn(ExperimentalFoundationApi::class)
+fun Modifier.hapticClickable(
+    enabled: Boolean = true,
+    type: HapticFeedbackType = HapticFeedbackType.ContextClick,
+    interactionSource: MutableInteractionSource? = null,
+    showIndication: Boolean = true,
+    onLongClick: (() -> Unit)? = null,
+    onClick: () -> Unit,
+): Modifier = composed {
+    val haptics = LocalHapticFeedback.current
+    val source = interactionSource ?: remember { MutableInteractionSource() }
+    combinedClickable(
+        interactionSource = source,
+        indication = if (showIndication) LocalIndication.current else null,
+        enabled = enabled,
+        onLongClick = onLongClick?.let { longClick ->
+            {
+                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                longClick()
+            }
+        },
+    ) {
+        haptics.performHapticFeedback(type)
+        onClick()
+    }
 }

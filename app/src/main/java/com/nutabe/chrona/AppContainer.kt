@@ -13,8 +13,8 @@ class AppContainer(context: Context) {
     val repository: AlarmRepository by lazy { AlarmRepository(appContext, AlarmStore.get(appContext)) }
 
     /**
-     * The alarm just deleted from the editor, waiting for the list to offer an undo. It is state, not an
-     * event, because the list is not composed while the editor is on top and would miss the event.
+     * The alarms just deleted, waiting for the list to offer an undo. It is state, not an event, because
+     * the list is not composed while the editor is on top and would miss the event.
      */
-    val deletedAlarm = MutableStateFlow<Alarm?>(null)
+    val deletedAlarms = MutableStateFlow<List<Alarm>>(emptyList())
 }

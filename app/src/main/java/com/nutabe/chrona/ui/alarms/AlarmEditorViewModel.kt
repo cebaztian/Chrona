@@ -40,11 +40,12 @@ fun editorState(draft: Alarm, isNew: Boolean, locked: Boolean, now: Instant, nex
 class AlarmEditorViewModel(
     private val repository: AlarmRepository,
     alarmId: Long,
+    copyOf: Long = 0,
     private val nextTrigger: NextTrigger = NextTrigger(Clock.systemDefaultZone()),
 ) : ViewModel() {
     private val original: Alarm? = repository.data.value.alarms.firstOrNull { it.id == alarmId }
     private val isNew = original == null
-    private val draft = MutableStateFlow(original ?: Alarm())
+    private val draft = MutableStateFlow(original ?: repository.data.value.alarms.firstOrNull { it.id == copyOf }?.let(::copyDraft) ?: Alarm())
 
     private val locked = original?.let {
         val data = repository.data.value
@@ -73,6 +74,10 @@ class AlarmEditorViewModel(
         return (repository.delete(id) as? AlarmOutcome.Applied)?.alarm
     }
 }
+
+/** A new alarm with the settings of [source], without its schedule state. */
+internal fun copyDraft(source: Alarm): Alarm =
+    source.copy(id = 0, enabled = true, nextTriggerAt = null, snoozedUntil = null, snoozesUsed = 0)
 
 private fun ticker(): Flow<Instant> = flow {
     while (true) {

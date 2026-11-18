@@ -2,7 +2,6 @@ package com.nutabe.chrona.ui.alarms
 
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,9 +18,16 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TimePicker
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -30,6 +36,7 @@ import androidx.compose.ui.unit.sp
 import com.nutabe.chrona.R
 import com.nutabe.chrona.ui.components.ChronaIcon
 import com.nutabe.chrona.ui.components.ChronaSwitch
+import com.nutabe.chrona.ui.components.hapticClickable
 import com.nutabe.chrona.ui.theme.ChronaText
 
 /** A row of the sound and snooze groups: leading icon, label, optional value and caret. */
@@ -46,7 +53,7 @@ fun SettingRow(
     Row(
         modifier
             .fillMaxWidth()
-            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+            .then(if (onClick != null) Modifier.hapticClickable(onClick = onClick) else Modifier)
             .padding(horizontal = 20.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),
@@ -86,7 +93,7 @@ fun SwitchRow(
                     supporting,
                     style = MaterialTheme.typography.bodySmall,
                     color = scheme.onSurfaceVariant,
-                    modifier = Modifier.then(if (onSupportingClick != null) Modifier.clickable(onClick = onSupportingClick) else Modifier),
+                    modifier = Modifier.then(if (onSupportingClick != null) Modifier.hapticClickable(onClick = onSupportingClick) else Modifier),
                 )
             }
         }
@@ -126,7 +133,7 @@ fun Stepper(value: Int, onChange: (Int) -> Unit, range: IntRange, modifier: Modi
 @Composable
 private fun StepperButton(@DrawableRes icon: Int, description: String, enabled: Boolean, modifier: Modifier, onClick: () -> Unit) {
     Box(
-        modifier.size(48.dp).clip(CircleShape).clickable(enabled = enabled, onClick = onClick),
+        modifier.size(48.dp).clip(CircleShape).hapticClickable(enabled = enabled, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
         ChronaIcon(
@@ -142,6 +149,11 @@ private fun StepperButton(@DrawableRes icon: Int, description: String, enabled: 
 @Composable
 fun TimeDialog(hour: Int, minute: Int, onConfirm: (hour: Int, minute: Int) -> Unit, onDismiss: () -> Unit) {
     val state = rememberTimePickerState(initialHour = hour, initialMinute = minute, is24Hour = true)
+    val haptics = LocalHapticFeedback.current
+    var firstValue by remember { mutableStateOf(true) }
+    LaunchedEffect(state.hour, state.minute) {
+        if (firstValue) firstValue = false else haptics.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
+    }
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = MaterialTheme.colorScheme.surfaceContainer,
@@ -171,7 +183,7 @@ fun RampDialog(current: Int, onSelect: (Int) -> Unit, onDismiss: () -> Unit) {
                     Row(
                         Modifier
                             .fillMaxWidth()
-                            .clickable { onSelect(seconds) }
+                            .hapticClickable { onSelect(seconds) }
                             .padding(vertical = 14.dp)
                             .testTag("ramp-$seconds"),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -231,7 +243,7 @@ fun TonePickDialog(onRingtones: () -> Unit, onFile: () -> Unit, onDefault: () ->
                         stringResource(label),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.fillMaxWidth().clickable(onClick = action).padding(vertical = 16.dp),
+                        modifier = Modifier.fillMaxWidth().hapticClickable(onClick = action).padding(vertical = 16.dp),
                     )
                 }
             }
@@ -245,7 +257,7 @@ private fun DialogAction(text: String, tag: String, onClick: () -> Unit) {
         text,
         style = MaterialTheme.typography.labelLarge,
         color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.clip(CircleShape).clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 12.dp).testTag(tag),
+        modifier = Modifier.clip(CircleShape).hapticClickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 12.dp).testTag(tag),
     )
 }
 

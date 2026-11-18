@@ -6,7 +6,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.remember
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
@@ -21,13 +23,14 @@ import com.nutabe.chrona.ui.alarms.AlarmListViewModel
 import com.nutabe.chrona.ui.health.HealthHost
 import com.nutabe.chrona.ui.onboarding.OnboardingHost
 import com.nutabe.chrona.ui.settings.SettingsHost
+import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 
 @Serializable
 data object ListRoute
 
 @Serializable
-data class EditorRoute(val id: Long = 0)
+data class EditorRoute(val id: Long = 0, val copyOf: Long = 0)
 
 @Serializable
 data object SettingsRoute
@@ -52,12 +55,13 @@ fun ChronaApp(container: AppContainer) {
                 container,
                 onOpen = { navController.navigate(EditorRoute(it)) },
                 onAdd = { navController.navigate(EditorRoute()) },
+                onDuplicate = { navController.navigate(EditorRoute(copyOf = it)) },
                 onSettings = { navController.navigate(SettingsRoute) },
             )
         }
         composable<EditorRoute> { entry ->
             val route = entry.toRoute<EditorRoute>()
-            AlarmEditorHost(container, route.id) { navController.popBackStack() }
+            AlarmEditorHost(container, route.id, route.copyOf) { navController.popBackStack() }
         }
         composable<SettingsRoute> {
             SettingsHost(
@@ -82,18 +86,38 @@ fun ChronaApp(container: AppContainer) {
 }
 
 @Composable
-private fun ListHost(container: AppContainer, onOpen: (Long) -> Unit, onAdd: () -> Unit, onSettings: () -> Unit) {
+private fun ListHost(
+    container: AppContainer,
+    onOpen: (Long) -> Unit,
+    onAdd: () -> Unit,
+    onDuplicate: (Long) -> Unit,
+    onSettings: () -> Unit,
+) {
     val viewModel = viewModel { AlarmListViewModel(container.repository) }
     val state by viewModel.state.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
-    val deletedMessage = stringResource(R.string.alarm_deleted)
     val undoLabel = stringResource(R.string.undo)
-    val deleted by container.deletedAlarm.collectAsState()
+    val deleted by container.deletedAlarms.collectAsState()
+    val deletedMessage = pluralStringResource(R.plurals.alarms_deleted, deleted.size.coerceAtLeast(1), deleted.size)
+    val scope = rememberCoroutineScope()
     LaunchedEffect(deleted) {
-        val alarm = deleted ?: return@LaunchedEffect
+        if (deleted.isEmpty()) return@LaunchedEffect
         val result = snackbarHostState.showSnackbar(deletedMessage, actionLabel = undoLabel)
-        if (result == SnackbarResult.ActionPerformed) container.repository.restore(alarm)
-        container.deletedAlarm.compareAndSet(alarm, null)
+        if (result == SnackbarResult.ActionPerformed) deleted.forEach { container.repository.restore(it) }
+        container.deletedAlarms.compareAndSet(deleted, emptyList())
     }
-    AlarmListScreen(state, snackbarHostState, viewModel::setEnabled, onOpen, onAdd, onSettings)
+    AlarmListScreen(
+        state,
+        snackbarHostState,
+        viewModel::setEnabled,
+        onOpen,
+        onAdd,
+        onSettings,
+        onDuplicate,
+        onDelete = { id -> scope.launch { viewModel.delete(id)?.let { container.deletedAlarms.value = listOf(it) } } },
+        onSelect = viewModel::startSelecting,
+        onToggleSelected = viewModel::toggleSelected,
+        onCancelSelection = viewModel::cancelSelection,
+        onDeleteSelected = { scope.launch { container.deletedAlarms.value = viewModel.deleteSelected() } },
+    )
 }

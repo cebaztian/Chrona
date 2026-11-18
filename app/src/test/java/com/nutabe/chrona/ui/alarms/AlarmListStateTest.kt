@@ -12,6 +12,7 @@ import java.time.ZoneId
 import java.time.ZonedDateTime
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class AlarmListStateTest {
@@ -133,5 +134,26 @@ class AlarmListStateTest {
     fun clockIsTwentyFourHourWithLeadingZeros() {
         assertEquals("06:05", formatClock(6, 5))
         assertEquals("23:59", formatClock(23, 59))
+    }
+
+    @Test
+    fun aSelectionKeepsOnlyUnlockedAlarmsThatStillExist() {
+        val state = AlarmListState(
+            listOf(
+                AlarmItem(Alarm(id = 1), null),
+                AlarmItem(Alarm(id = 2), LockReason.RINGING),
+                AlarmItem(Alarm(id = 3), null),
+            ),
+        )
+        assertEquals(setOf(1L, 3L), state.withSelection(setOf(1L, 2L, 3L, 99L)).selection)
+    }
+
+    @Test
+    fun anEmptySelectionLeavesSelectionMode() {
+        val state = AlarmListState(listOf(AlarmItem(Alarm(id = 1), null), AlarmItem(Alarm(id = 2), LockReason.SNOOZED)))
+        assertNull(state.withSelection(null).selection)
+        assertNull(state.withSelection(emptySet()).selection)
+        assertNull(state.withSelection(setOf(2L)).selection)
+        assertTrue(state.withSelection(setOf(1L)).selection == setOf(1L))
     }
 }

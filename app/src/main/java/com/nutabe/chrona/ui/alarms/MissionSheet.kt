@@ -4,7 +4,6 @@ import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -39,6 +38,7 @@ import com.nutabe.chrona.ui.components.DoubleBezelCard
 import com.nutabe.chrona.ui.components.EyebrowTag
 import com.nutabe.chrona.ui.components.InfoPill
 import com.nutabe.chrona.ui.components.PillCta
+import com.nutabe.chrona.ui.components.hapticClickable
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -62,7 +62,7 @@ fun MissionSheet(
             Column(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()).padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                     Text(stringResource(R.string.mission_picker_title), style = MaterialTheme.typography.headlineMedium, color = scheme.onSurface)
-                    Box(Modifier.size(48.dp).border(1.dp, scheme.secondary.copy(alpha = 0.5f), CircleShape).clip(CircleShape).clickable(onClick = onDismiss), contentAlignment = Alignment.Center) {
+                    Box(Modifier.size(48.dp).border(1.dp, scheme.secondary.copy(alpha = 0.5f), CircleShape).clip(CircleShape).hapticClickable(onClick = onDismiss), contentAlignment = Alignment.Center) {
                         ChronaIcon(R.drawable.ic_x, contentDescription = stringResource(R.string.close_cd), size = 20.dp)
                     }
                 }
@@ -139,7 +139,7 @@ private fun MissionOption(
             Modifier
                 .fillMaxWidth()
                 .then(if (selected) Modifier.border(1.5.dp, scheme.primary, MaterialTheme.shapes.large) else Modifier)
-                .clickable(enabled = enabled, onClick = onClick)
+                .hapticClickable(enabled = enabled, onClick = onClick)
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(14.dp),
@@ -186,7 +186,7 @@ private fun androidx.compose.foundation.layout.RowScope.Choice(@StringRes label:
             .then(
                 if (selected) Modifier.background(scheme.secondaryContainer) else Modifier.border(1.dp, scheme.secondary.copy(alpha = 0.6f), CircleShape),
             )
-            .clickable(onClick = onClick)
+            .hapticClickable(onClick = onClick)
             .testTag(tag),
         contentAlignment = Alignment.Center,
     ) {
