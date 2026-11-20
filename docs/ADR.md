@@ -329,6 +329,8 @@ entry), *Open* (waiting for a decision), *Superseded*.
   - If DV disproves ADR-014, the steps adapter changes late; PLAN.md §5.3 documents that fallback.
   - Most [user] verification steps became [agent] steps. The user reviews screenshots and
     recordings, and makes the DV decision.
+- **Update (2026-11-19):** ADR-012 was accepted at the M1a checkpoint (2026-11-17) and ADR-014 in DV
+  (2026-11-18), so the first consequence above no longer holds.
 
 ## ADR-024 — Visual direction: editorial serif + tabular sans hybrid; Phosphor icons
 
@@ -368,3 +370,6 @@ entry), *Open* (waiting for a decision), *Superseded*.
   - The user reviews decisions and commits after the fact, through the journal and `git log`.
   - MILESTONES.md's "explicit approval before committing" applies to interactive work only. Under
     the loop, a checkpoint is passed by the loop itself.
+- **Update (2026-11-19):** the project skill `milestone-loop` was replaced by the global
+  `run-milestones` skill with the same decision policy; Chrona's specifics live in `docs/LOOP.md`, and
+  the journal of finished milestones is archived in `docs/journal/`.

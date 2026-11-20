@@ -205,7 +205,7 @@ Text must survive the system font scale up to 200 %: no fixed-height text contai
 **Reference screens** (D2, approved direction): [`docs/design/final/`](design/final/) `01`–`11`,
 generated in the Stitch project `12862449765537649811` (preview links have the form
 `https://stitch.google.com/preview/12862449765537649811?node-id=<screen id>`; the final screen ids are
-listed in STATUS.md, "D2 — Final screens"). They are a visual reference
+listed in [journal/D2.md](journal/D2.md), "D2 — Final screens"). They are a visual reference
 only; M2 and M3 build them in Compose from this guide and do not convert the Stitch HTML. Where a
 render and this guide disagree, this guide wins. The D1 structure screens in `docs/design/screens/`
 are superseded.

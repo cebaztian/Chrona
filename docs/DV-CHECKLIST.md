@@ -1,6 +1,6 @@
 # Chrona - Device validation checklist (DV)
 
-Written by the `milestone-loop` for MILESTONES.md "DV", task 1. It covers both options, so it does not
+Written by the milestone loop (now the `run-milestones` skill) for MILESTONES.md "DV", task 1. It covers both options, so it does not
 depend on the choice you make at the start of DV:
 
 - **(a) USB or wireless debugging:** the agent runs the `adb` steps and reads `logcat`. Connect the S25 Ultra
@@ -94,6 +94,17 @@ The question: do steps keep counting inside the service with the screen off and 
 - Haptics (DESIGN section 7): the time picker, Save, weekday chips, switches, numpad and the long press all vibrate
   at a level you can feel on One UI; say which ones are too faint or too strong.
 - Alarm list long press: Duplicate, Select and Delete work; select three alarms, delete them and Undo restores all.
+
+## Reviews carried from checkpoints
+
+Reviews that the self-approved M2 and M3 checkpoints could not do. Moved here from STATUS on 2026-11-19.
+
+- [ ] M2: compare the list, editor, mission sheet, settings, health and onboarding with
+  `docs/design/final/01`–`07`. On the S25, also open the steps option, the time-picker, ramp and snooze dialogs
+  and the ringtone and file pickers (never hand-exercised on the emulator).
+- [ ] M3: compare the recording `docs/evidence/m3-ring-and-math.mp4` (ring screen, "Start mission", a wrong
+  answer, two problems) with `docs/design/final/08`–`11`. The shake feel and the haptic on a wrong answer are
+  in item 5; real walking with the screen off passed in item 1.
 
 ## Results
 

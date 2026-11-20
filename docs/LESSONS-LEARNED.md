@@ -1,7 +1,8 @@
 # Chrona — Lessons Learned
 
 Reusable patterns found while building Chrona (M0 to DV, 2026-11-17 to 2026-11-18). Each entry names its
-source as a journal line (`date time TAG milestone`), so it can be found in the journal archive.
+source as a journal line (`date time TAG milestone`) or a checkpoint, so it can be found in
+`docs/journal/<milestone>.md`.
 Entries marked **(general)** also apply to other Android projects and are copied, in generic form, to
 the `run-milestones` skill (`references/android-emulator.md`).
 
@@ -249,7 +250,8 @@ DV), the loop records it as a stated default and does not decide it.
 ### Self-approved checkpoints orphan review items
 **Pattern:** move every `[user]` review of an auto-approved checkpoint into the DV checklist.
 **Why:** the M2 and M3 "review against the designs" boxes stayed open in STATUS after both milestones closed.
-**Source:** STATUS "Waiting for you", 2026-11-18.
+**Source:** STATUS "Waiting for you", 2026-11-18 (moved on 2026-11-19 to DV-CHECKLIST, "Reviews carried
+from checkpoints").
 
 ### Keep STATUS short; archive the journal
 **Pattern:** STATUS holds Now, Waiting and the milestone table; the journal is archived per milestone.
@@ -259,8 +261,9 @@ DV), the loop records it as a stated default and does not decide it.
 ### Durable docs never point at the scratchpad
 **Pattern:** move evidence the user must review (recordings, screenshots) into the repo or a git-ignored
 project folder before naming it in a doc.
-**Why:** the M3 screen recording is linked from STATUS but lives in a session scratchpad that can be cleared.
-**Source:** STATUS "Waiting for you", M3 item.
+**Why:** the M3 screen recording was linked from STATUS but lived in a session scratchpad that can be
+cleared (copied to `docs/evidence/` on 2026-11-19).
+**Source:** STATUS "Waiting for you", M3 item (before the 2026-11-19 trim).
 
 ### An immutable Accepted ADR goes stale
 **Pattern:** allow a dated "Update" note on an Accepted ADR for consequences that changed, and supersede it

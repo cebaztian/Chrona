@@ -3,9 +3,9 @@
 Detailed breakdown of the milestones summarized in [PLAN.md](PLAN.md) §7. PLAN.md owns the *what*
 and *why* (architecture, failure modes, decisions); this file owns the *order of work* and *how each
 milestone is verified*. Decisions are logged in [ADR.md](ADR.md).
-Progress lives in [STATUS.md](STATUS.md), maintained by the `milestone-loop` skill
-(`.claude/skills/milestone-loop/`), which can run the milestones unattended and resume after an
-interruption.
+Progress lives in [STATUS.md](STATUS.md), maintained by the global `run-milestones` skill with the
+project specifics in [LOOP.md](LOOP.md); it can run the milestones unattended and resume after an
+interruption. Finished milestones are archived in [`journal/`](journal/).
 
 **Rules for every milestone**
 - **Development and verification run on an emulator** (ADR-023): AVD `Chrona_API37`, image
